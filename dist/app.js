@@ -7,6 +7,13 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
+// routes import
+import userRoutes from "./routes/user.routes.js";
+// routes declaration
+app.use("/api/v1/user", userRoutes);
+import { error } from "./middlewares/error.middleware.js";
+// error middleware
+app.use(error);
 connect()
     .then(() => {
     app.listen(PORT, () => {

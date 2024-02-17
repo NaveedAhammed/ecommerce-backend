@@ -7,7 +7,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 // POST Register User
 export const registerUser = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { username, email, password } = req.body;
+    const { username, email, password, gender } = req.body;
     const isExistingUser = await User.findOne({
       $or: [{ username }, { email }],
     });
@@ -16,7 +16,7 @@ export const registerUser = asyncHandler(
         new ApiError(409, "User with email or username already exists")
       );
     }
-    const user = new User({ username, email, password });
+    const user = new User({ username, email, password, gender });
     const accessToken: string = user.generateAccessToken();
     const refreshToken: string = user.generateRefreshToken();
     user.refreshToken = refreshToken;

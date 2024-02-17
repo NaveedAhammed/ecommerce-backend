@@ -9,6 +9,7 @@ interface IUser {
   username: string;
   email: string;
   password: string;
+  gender: string;
   phone?: number;
   avatar?: string;
   role: string;
@@ -37,6 +38,8 @@ const userSchema = new Schema<IUser>(
       type: String,
       unique: true,
       required: [true, "Username is required"],
+      minlength: [3, "Min 3 characters are required"],
+      maxlength: [24, "Max 24 characters are allowed"],
     },
     email: {
       type: String,
@@ -48,6 +51,18 @@ const userSchema = new Schema<IUser>(
         },
         message: (props: mongoose.ValidatorProps) =>
           `${props.value} is not a valid email`,
+      },
+    },
+    password: {
+      type: String,
+      required: [true, "Password is required"],
+    },
+    gender: {
+      type: String,
+      required: [true, "Gender is required"],
+      enum: {
+        values: ["male", "female"],
+        message: "{VALUE} is not supported",
       },
     },
     phone: {

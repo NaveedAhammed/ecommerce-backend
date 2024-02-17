@@ -7,6 +7,7 @@ const error = (
   res: Response,
   next: NextFunction
 ) => {
+  console.log(err.message);
   res.status(err.statusCode).json({
     success: err.success,
     message: err.message,

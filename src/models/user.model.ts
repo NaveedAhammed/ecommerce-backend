@@ -5,7 +5,8 @@ import crypto from "crypto";
 
 const { Schema, model } = mongoose;
 
-interface IUser {
+export interface IUser {
+  _id: Types.ObjectId;
   username: string;
   email: string;
   password: string;

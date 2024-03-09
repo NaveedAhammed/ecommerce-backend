@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import jwt from "jsonwebtoken";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import User from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
@@ -31,7 +32,6 @@ export const registerUser = asyncHandler(async (req, res, next) => {
     return res
         .status(201)
         .cookie("refreshToken", refreshToken, options)
-        .cookie("accessToken", accessToken, options)
         .json(new ApiResponse(201, {
         user: {
             id: user._id,
@@ -39,7 +39,6 @@ export const registerUser = asyncHandler(async (req, res, next) => {
             avatar: user.avatar,
         },
         accessToken,
-        refreshToken,
     }, "Registered successfully"));
 });
 // POST Login User
@@ -67,7 +66,6 @@ export const loginUser = asyncHandler(async (req, res, next) => {
     return res
         .status(200)
         .cookie("refreshToken", refreshToken, options)
-        .cookie("accessToken", accessToken, options)
         .json(new ApiResponse(200, {
         user: {
             id: user._id,
@@ -75,7 +73,6 @@ export const loginUser = asyncHandler(async (req, res, next) => {
             avatar: user.avatar,
         },
         accessToken,
-        refreshToken,
     }, "Logged in successfully"));
 });
 // POST Logout User
@@ -199,4 +196,31 @@ export const uploadProfilePicture = asyncHandler(async (req, res, next) => {
             phone: user?.phone,
         },
     }));
+});
+// GET Refresh
+export const refresh = asyncHandler(async (req, res, next) => {
+    const cookies = req.cookies;
+    if (!cookies?.refreshToken) {
+        return res.status(401).json(new ApiError(401, "Unauthorized request"));
+    }
+    const refreshToken = cookies.refreshToken;
+    const user = await User.findOne({ refreshToken });
+    if (!user) {
+        return next(new ApiError(401, "Invalid refresh token"));
+    }
+    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+            console.log("Hello");
+            return next(new ApiError(401, "Refresh token has been expired"));
+        }
+        const accessToken = jwt.sign({ id: user._id, username: decoded.username }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRY });
+        return res.status(200).json(new ApiResponse(200, {
+            user: {
+                username: user.username,
+                avatar: user?.avatar,
+                id: user._id,
+            },
+            accessToken,
+        }));
+    });
 });

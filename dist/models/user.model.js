@@ -108,7 +108,7 @@ userSchema.methods.generateAccessToken = function () {
     });
 };
 userSchema.methods.generateRefreshToken = function () {
-    return jwt.sign({ id: this._id }, process.env.REFRESH_TOKEN_SECRET, {
+    return jwt.sign({ id: this._id, username: this.username }, process.env.REFRESH_TOKEN_SECRET, {
         expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
     });
 };

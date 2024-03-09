@@ -23,20 +23,35 @@ const productSchema = new Schema({
         type: Number,
         default: 0,
     },
-    images: {
-        type: [String],
-        required: [true, "Product images are required"],
-        minlength: [1, "Atleast 1 image is required"],
-        maxlength: [5, "Atmost 5 images can be uploaded"],
+    color: {
+        type: Types.ObjectId,
+        ref: "Color",
     },
+    size: {
+        type: Types.ObjectId,
+        ref: "Size",
+    },
+    featured: {
+        type: Boolean,
+        default: false,
+    },
+    images: [
+        {
+            url: {
+                type: String,
+            },
+            id: {
+                type: String,
+            },
+        },
+    ],
     numRating: {
         type: Number,
         default: 0,
     },
     category: {
-        type: String,
-        required: [true, "Product category is required"],
-        lowercase: true,
+        type: Types.ObjectId,
+        ref: "Category",
     },
     reviews: [
         {

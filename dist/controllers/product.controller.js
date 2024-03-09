@@ -2,10 +2,16 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import Product from "../models/product.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+export const products = asyncHandler(async (req, res, next) => {
+    res.send("Hello");
+});
 // GET Product Details
 export const productDetails = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
-    const product = await Product.findById(id);
+    const product = await Product.findById(id)
+        .populate("category", "name")
+        .populate("color", "name value")
+        .populate("size", "name value");
     if (!product) {
         return next(new ApiError(404, `No product found with this id:${id}`));
     }

@@ -9,11 +9,11 @@ import { JwtPayload } from "../types/jwt.js";
 
 export const isAuth = asyncHandler(
   async (req: IGetUserAuthInfoRequest, _: Response, next: NextFunction) => {
-    const token: string =
-      req.cookies?.accessToken ||
-      req.header("Authorization")?.replace("Bearer ", "");
+    const token: string | undefined = req
+      .header("Authorization")
+      ?.replace("Bearer ", "");
     if (!token) {
-      throw new ApiError(401, "Unauthorized request");
+      return next(new ApiError(401, "Anauthorized request"));
     }
     const { id } = jwt.verify(
       token,
@@ -21,7 +21,7 @@ export const isAuth = asyncHandler(
     ) as JwtPayload;
     const user = await User.findById(id);
     if (!user) {
-      throw new ApiError(401, "User not found!");
+      return next(new ApiError(401, "Invalid access token"));
     }
     req.user = user;
     next();
@@ -34,8 +34,8 @@ export const isAdmin = (
   next: NextFunction
 ) => {
   isAuth(req, res, () => {
-    if (req.user.role !== "admin") {
-      throw new ApiError(401, "You are not authorised");
+    if (req?.user?.role !== "admin") {
+      return next(new ApiError(403, "You are not authorised"));
     }
     next();
   });

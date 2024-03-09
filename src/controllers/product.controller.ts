@@ -6,11 +6,20 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { IGetUserAuthInfoRequest } from "../types/request.js";
 
+export const products = asyncHandler(
+  async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+    res.send("Hello");
+  }
+);
+
 // GET Product Details
 export const productDetails = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
-    const product = await Product.findById(id);
+    const product = await Product.findById(id)
+      .populate("category", "name")
+      .populate("color", "name value")
+      .populate("size", "name value");
     if (!product) {
       return next(new ApiError(404, `No product found with this id:${id}`));
     }

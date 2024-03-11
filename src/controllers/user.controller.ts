@@ -14,6 +14,9 @@ import { sendEmail } from "../utils/sendEmail.js";
 export const registerUser = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { username, email, password, gender } = req.body;
+    if (!username || !email || !password || !gender) {
+      return next(new ApiError(402, "Please enter valid inputs"));
+    }
     const isExistingUser = await User.findOne({
       $or: [{ username }, { email }],
     });
@@ -64,6 +67,9 @@ export const registerUser = asyncHandler(
 export const loginUser = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { usernameOrEmail, password } = req.body;
+    if (!usernameOrEmail || !password) {
+      return next(new ApiError(402, "Please enter valid inputs"));
+    }
     const user = await User.findOne({
       $or: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
     });

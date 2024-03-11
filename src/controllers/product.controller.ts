@@ -12,6 +12,29 @@ export const products = asyncHandler(
   }
 );
 
+// GET Featured Products
+export const featuredProducts = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const page = Number(req.query.page) || 1;
+    const limit = 2;
+    const skip = (page - 1) * limit;
+    const products = await Product.find({ featured: true })
+      .populate("category", "name")
+      .populate("color", "name value")
+      .populate("size", "name value")
+      .limit(limit)
+      .skip(skip);
+    const totalProducts = await Product.countDocuments();
+    return res.status(200).json(
+      new ApiResponse(200, {
+        products,
+        totalProducts,
+        productsPerPage: limit,
+      })
+    );
+  }
+);
+
 // GET Product Details
 export const productDetails = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {

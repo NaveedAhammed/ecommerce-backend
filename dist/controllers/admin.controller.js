@@ -52,29 +52,37 @@ export const adminLogin = asyncHandler(async (req, res, next) => {
 // GET All Users
 export const allUsers = asyncHandler(async (req, res, next) => {
     const users = await User.find();
+    const totalUsers = await User.countDocuments();
     return res.status(200).json(new ApiResponse(200, {
         users,
+        totalUsers,
     }));
 });
 // GET All Categories
 export const allCategories = asyncHandler(async (req, res, next) => {
     const categories = await Category.find();
+    const toatlCategories = await Category.countDocuments();
     return res.status(200).json(new ApiResponse(200, {
         categories,
+        toatlCategories,
     }));
 });
 // GET All Sizes
 export const allSizes = asyncHandler(async (req, res, next) => {
     const sizes = await Size.find();
+    const totalSizes = await Size.countDocuments();
     return res.status(200).json(new ApiResponse(200, {
         sizes,
+        totalSizes,
     }));
 });
 // GET All Colors
 export const allColors = asyncHandler(async (req, res, next) => {
     const colors = await Color.find();
+    const totalColors = await Color.countDocuments();
     return res.status(200).json(new ApiResponse(200, {
         colors,
+        totalColors,
     }));
 });
 // GET All Products
@@ -88,8 +96,11 @@ export const allProducts = asyncHandler(async (req, res, next) => {
         .populate("size", "name value")
         .limit(limit)
         .skip(skip);
+    const totalProducts = await Product.countDocuments();
     return res.status(200).json(new ApiResponse(200, {
         products,
+        totalProducts,
+        productsPerPage: limit,
     }));
 });
 // GET Single User
@@ -133,10 +144,11 @@ export const deleteUser = asyncHandler(async (req, res, next) => {
 export const createProduct = asyncHandler(async (req, res, next) => {
     const { title, description, price, stock, discount, category, color, size, featured, } = req.body;
     const images = req.files;
-    console.log(req.files);
-    console.log(req.body);
     if (images.length === 0) {
-        return next(new ApiError(400, "Please add atleast one image"));
+        return next(new ApiError(400, "Atleast 1 image is required"));
+    }
+    if (images.length > 4) {
+        return next(new ApiError(400, "Atmost 4 images only"));
     }
     const imagesLinks = [];
     for (let i = 0; i < images.length; i++) {
@@ -211,11 +223,42 @@ export const createCategory = asyncHandler(async (req, res, next) => {
 // POST Update Product
 export const updateProduct = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
+    const { title, description, price, stock, discount, category, color, size, featured, prevImages, } = req.body;
+    const images = req.files;
     const product = await Product.findById(id);
     if (!product) {
         return next(new ApiError(500, `No product found with this id:${id}`));
     }
-    const updatedProduct = await Product.findByIdAndUpdate(id, req.body, {
+    if (prevImages.length === 0 && images.length === 0) {
+        return next(new ApiError(400, "Atleast 1 image is required"));
+    }
+    const imagesLinks = [];
+    if (images.length > 0) {
+        for (let i = 0; i < images.length; i++) {
+            const result = await uploadOnCloudinary(images[i].path);
+            if (result?.secure_url) {
+                imagesLinks.push({
+                    url: result?.secure_url,
+                    id: result?.public_id,
+                });
+            }
+        }
+    }
+    if (prevImages.length > 0) {
+        imagesLinks.concat(prevImages);
+    }
+    const updatedProduct = await Product.findByIdAndUpdate(id, {
+        title,
+        description,
+        price,
+        discount,
+        stock,
+        color,
+        size,
+        category,
+        featured,
+        images: imagesLinks,
+    }, {
         new: true,
     });
     return res
@@ -225,25 +268,33 @@ export const updateProduct = asyncHandler(async (req, res, next) => {
 // POST Update Category
 export const updateCategory = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
+    const { name } = req.body;
+    if (!name) {
+        return next(new ApiError(402, "Please enter valid inputs"));
+    }
     const category = await Category.findById(id);
     if (!category) {
         return next(new ApiError(500, `No category found with this id:${id}`));
     }
-    const updatedCategory = await Category.findByIdAndUpdate(id, req.body, {
+    const updatedCategory = await Category.findByIdAndUpdate(id, { name }, {
         new: true,
     });
     return res
         .status(200)
-        .json(new ApiResponse(200, { category: updatedCategory }, "Product updated successfully."));
+        .json(new ApiResponse(200, { category: updatedCategory }, "Category updated successfully."));
 });
 // POST Update Category
 export const updateColor = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
+    const { name, value } = req.body;
+    if (!name || !value) {
+        return next(new ApiError(402, "Please enter valid inputs"));
+    }
     const color = await Color.findById(id);
     if (!color) {
         return next(new ApiError(500, `No color found with this id:${id}`));
     }
-    const updatedColor = await Color.findByIdAndUpdate(id, req.body, {
+    const updatedColor = await Color.findByIdAndUpdate(id, { name, value }, {
         new: true,
     });
     return res
@@ -253,11 +304,15 @@ export const updateColor = asyncHandler(async (req, res, next) => {
 // POST Update Category
 export const updateSize = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
+    const { name, value } = req.body;
+    if (!name || !value) {
+        return next(new ApiError(402, "Please enter valid inputs"));
+    }
     const size = await Size.findById(id);
     if (!size) {
         return next(new ApiError(500, `No size found with this id:${id}`));
     }
-    const updatedSize = await Size.findByIdAndUpdate(id, req.body, {
+    const updatedSize = await Size.findByIdAndUpdate(id, { name, value }, {
         new: true,
     });
     return res
@@ -314,9 +369,14 @@ export const deleteSize = asyncHandler(async (req, res, next) => {
 });
 // GET All Orders
 export const allOrders = asyncHandler(async (req, res, next) => {
-    const orders = await Order.find();
+    const page = Number(req.query.page) || 1;
+    const limit = 2;
+    const skip = (page - 1) * limit;
+    const orders = await Order.find().skip(skip).limit(limit);
+    const totalOrders = await Order.countDocuments();
     return res.status(200).json(new ApiResponse(200, {
         orders,
+        totalOrders,
     }));
 });
 // POST Update Order Status
@@ -346,9 +406,7 @@ export const deleteOrder = asyncHandler(async (req, res, next) => {
 export const refresh = asyncHandler(async (req, res, next) => {
     const cookies = req.cookies;
     if (!cookies?.refreshToken) {
-        return res
-            .status(401)
-            .json(new ApiError(401, "Unauthorized request"));
+        return res.status(401).json(new ApiError(401, "Unauthorized request"));
     }
     const refreshToken = cookies.refreshToken;
     const user = await User.findOne({ refreshToken });

@@ -22,6 +22,8 @@ export interface IUser {
   generateAccessToken(): string;
   generateRefreshToken(): string;
   generateResetPasswordToken(): string;
+  addItemToCart: (product: ICartItem) => void;
+  removeItemFromCart: (productId: string) => void;
 }
 
 interface ICartItem {
@@ -170,6 +172,19 @@ userSchema.methods.generateResetPasswordToken = function (): string {
   this.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
   return resetToken;
 };
+
+userSchema.methods.addItemToCart = function (product: ICartItem) {
+  const isExistingItem = this.cart.findIndex(
+    (item: ICartItem) => item.productId === product.productId
+  );
+  if (isExistingItem !== -1) {
+    this.cart[isExistingItem].quantity++;
+  } else {
+    this.cart.push(product);
+  }
+};
+
+userSchema.methods.removeItemFromCart = function (product: ICartItem) {};
 
 const User = model<IUser>("User", userSchema);
 

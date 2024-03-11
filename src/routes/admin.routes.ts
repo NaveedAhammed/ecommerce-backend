@@ -2,42 +2,41 @@ import multer from "multer";
 
 import { Router } from "express";
 import {
-	adminLogin,
-	allCategories,
-	allColors,
-	allOrders,
-	allProducts,
-	allSizes,
-	allUsers,
-	createCategory,
-	createColor,
-	createProduct,
-	createSize,
-	deleteCategory,
-	deleteColor,
-	deleteOrder,
-	deleteSize,
-	deleteUser,
-	refresh,
-	singleUser,
-	updateCategory,
-	updateColor,
-	updateSize,
-	updateUserRole,
+  adminLogin,
+  allCategories,
+  allColors,
+  allOrders,
+  allProducts,
+  allSizes,
+  allUsers,
+  createCategory,
+  createColor,
+  createProduct,
+  createSize,
+  deleteCategory,
+  deleteColor,
+  deleteOrder,
+  deleteProduct,
+  deleteProductImage,
+  deleteSize,
+  deleteUser,
+  refresh,
+  singleUser,
+  updateCategory,
+  updateColor,
+  updateSize,
+  updateUserRole,
 } from "../controllers/admin.controller.js";
 import { isAdmin } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
 const storage = multer.diskStorage({
-	destination: function (req, file, cb) {
-		cb(null, "./uploads");
-	},
-	filename: function (req, file, cb) {
-		cb(
-			null,
-			`${file.fieldname}_dateVal_${Date.now()}_${file.originalname}`
-		);
-	},
+  destination: function (req, file, cb) {
+    cb(null, "./uploads");
+  },
+  filename: function (req, file, cb) {
+    cb(null, `${file.fieldname}_dateVal_${Date.now()}_${file.originalname}`);
+  },
 });
 
 const router: Router = Router();
@@ -65,8 +64,8 @@ router.route("/products").get(isAdmin as any, allProducts);
 router.route("/login").post(adminLogin);
 // POST create product
 router
-	.route("/product/new")
-	.post(isAdmin as any, upload.array("images"), createProduct);
+  .route("/product/new")
+  .post(isAdmin as any, upload.array("images"), createProduct);
 // POST create size
 router.route("/size/new").post(isAdmin as any, createSize);
 // POST create color
@@ -87,6 +86,8 @@ router.route("/color/update/:id").put(isAdmin as any, updateColor);
 // <---------- DELETE REQUEST ---------->
 // DELETE user
 router.route("/users/:id").delete(isAdmin as any, deleteUser);
+// DELETE product
+router.route("/product/delete/:id").delete(isAdmin as any, deleteProduct);
 // DELETE order
 router.route("/order/delete/:id").delete(isAdmin as any, deleteOrder);
 // DELETE category
@@ -95,5 +96,9 @@ router.route("/category/delete/:id").put(isAdmin as any, deleteCategory);
 router.route("/color/delete/:id").put(isAdmin as any, deleteColor);
 // DELETE size
 router.route("/size/delete/:id").delete(isAdmin as any, deleteSize);
+// DELETE product image
+router
+  .route("/product/image/delete/:id")
+  .delete(isAdmin as any, deleteProductImage);
 
 export default router;

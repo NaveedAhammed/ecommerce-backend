@@ -1,6 +1,6 @@
 import multer from "multer";
 import { Router } from "express";
-import { adminLogin, allCategories, allColors, allOrders, allSizes, allUsers, createCategory, createColor, createProduct, createSize, deleteCategory, deleteColor, deleteOrder, deleteSize, deleteUser, refresh, singleUser, updateCategory, updateColor, updateSize, updateUserRole, } from "../controllers/admin.controller.js";
+import { adminLogin, allCategories, allColors, allOrders, allProducts, allSizes, allUsers, createCategory, createColor, createProduct, createSize, deleteCategory, deleteColor, deleteOrder, deleteSize, deleteUser, refresh, singleUser, updateCategory, updateColor, updateSize, updateUserRole, } from "../controllers/admin.controller.js";
 import { isAdmin } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 const storage = multer.diskStorage({
@@ -27,6 +27,8 @@ router.route("/users/:id").get(isAdmin, singleUser);
 router.route("/orders").get(isAdmin, allOrders);
 // GET admin refresh
 router.route("/refresh").get(refresh);
+// GET products
+router.route("/products").get(isAdmin, allProducts);
 // <---------- POST REQUEST ---------->
 // POST admin login
 router.route("/login").post(adminLogin);
@@ -59,5 +61,5 @@ router.route("/category/delete/:id").put(isAdmin, deleteCategory);
 // DELETE color
 router.route("/color/delete/:id").put(isAdmin, deleteColor);
 // DELETE size
-router.route("/size/delete/:id").put(isAdmin, deleteSize);
+router.route("/size/delete/:id").delete(isAdmin, deleteSize);
 export default router;

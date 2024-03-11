@@ -20,7 +20,7 @@ export const isAuth = asyncHandler(async (req, _, next) => {
 export const isAdmin = (req, res, next) => {
     isAuth(req, res, () => {
         if (req?.user?.role !== "admin") {
-            return next(new ApiError(403, "You are not authorised"));
+            return next(new ApiError(405, "You are not allowed"));
         }
         next();
     });

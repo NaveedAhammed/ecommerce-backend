@@ -9,8 +9,12 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import Size from "../models/size.model.js";
 import Color from "../models/color.model.js";
 import Category from "../models/category.model.js";
+// POST Admin Login
 export const adminLogin = asyncHandler(async (req, res, next) => {
     const { usernameOrEmail, password } = req.body;
+    if (!usernameOrEmail || !password) {
+        return next(new ApiError(400, "Please enter valid credentials"));
+    }
     const user = await User.findOne({
         $or: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
     });
@@ -66,11 +70,26 @@ export const allSizes = asyncHandler(async (req, res, next) => {
         sizes,
     }));
 });
-// GET All Users
+// GET All Colors
 export const allColors = asyncHandler(async (req, res, next) => {
     const colors = await Color.find();
     return res.status(200).json(new ApiResponse(200, {
         colors,
+    }));
+});
+// GET All Products
+export const allProducts = asyncHandler(async (req, res, next) => {
+    const page = Number(req.query.page) || 1;
+    const limit = 2;
+    const skip = (page - 1) * limit;
+    const products = await Product.find()
+        .populate("category", "name")
+        .populate("color", "name value")
+        .populate("size", "name value")
+        .limit(limit)
+        .skip(skip);
+    return res.status(200).json(new ApiResponse(200, {
+        products,
     }));
 });
 // GET Single User
@@ -159,7 +178,7 @@ export const createSize = asyncHandler(async (req, res, next) => {
     await size.save();
     return res
         .status(201)
-        .json(new ApiResponse(200, {}, "Created new size successfully"));
+        .json(new ApiResponse(200, { size }, "Created new size successfully"));
 });
 // POST Create Color
 export const createColor = asyncHandler(async (req, res, next) => {
@@ -327,7 +346,9 @@ export const deleteOrder = asyncHandler(async (req, res, next) => {
 export const refresh = asyncHandler(async (req, res, next) => {
     const cookies = req.cookies;
     if (!cookies?.refreshToken) {
-        return res.status(401).json(new ApiError(401, "Unauthorized request"));
+        return res
+            .status(401)
+            .json(new ApiError(401, "Unauthorized request"));
     }
     const refreshToken = cookies.refreshToken;
     const user = await User.findOne({ refreshToken });

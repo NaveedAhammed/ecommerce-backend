@@ -28,15 +28,13 @@ export const isAuth = asyncHandler(
 	}
 );
 
-export const isAdmin = (
-	req: IGetUserAuthInfoRequest,
-	res: Response,
-	next: NextFunction
-) => {
-	isAuth(req, res, () => {
+export const isAdmin = asyncHandler(
+	async (req: IGetUserAuthInfoRequest, _: Response, next: NextFunction) => {
 		if (req?.user?.role !== "admin") {
+			console.log("Hello");
+			console.log(req.user);
 			return next(new ApiError(405, "You are not allowed"));
 		}
 		next();
-	});
-};
+	}
+);

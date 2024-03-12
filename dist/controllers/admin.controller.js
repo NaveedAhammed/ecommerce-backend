@@ -49,6 +49,18 @@ export const adminLogin = asyncHandler(async (req, res, next) => {
         accessToken,
     }, "Logged in successfully"));
 });
+// GET All Orders
+export const allOrders = asyncHandler(async (req, res, next) => {
+    const page = Number(req.query.page) || 1;
+    const limit = 2;
+    const skip = (page - 1) * limit;
+    const orders = await Order.find().skip(skip).limit(limit);
+    const totalOrders = await Order.countDocuments();
+    return res.status(200).json(new ApiResponse(200, {
+        orders,
+        totalOrders,
+    }));
+});
 // GET All Users
 export const allUsers = asyncHandler(async (req, res, next) => {
     const users = await User.find();
@@ -113,32 +125,6 @@ export const singleUser = asyncHandler(async (req, res, next) => {
     return res.status(200).json(new ApiResponse(200, {
         user,
     }));
-});
-// POST Update User Role
-export const updateUserRole = asyncHandler(async (req, res, next) => {
-    const { id } = req.params;
-    const { role } = req.body;
-    const user = await User.findById(id);
-    if (!user) {
-        return next(new ApiError(400, `No user found with this id:${id}`));
-    }
-    user.role = role;
-    await user.save();
-    return res
-        .status(200)
-        .json(new ApiResponse(200, {}, "User role updated successfully"));
-});
-// POST Delete User
-export const deleteUser = asyncHandler(async (req, res, next) => {
-    const { id } = req.params;
-    const user = await User.findById(id);
-    if (!user) {
-        return next(new ApiError(400, `No user found with this id:${id}`));
-    }
-    await user.deleteOne();
-    return res
-        .status(200)
-        .json(new ApiResponse(200, {}, "User deleted successfully!"));
 });
 // POST Create Product
 export const createProduct = asyncHandler(async (req, res, next) => {
@@ -220,17 +206,39 @@ export const createCategory = asyncHandler(async (req, res, next) => {
         .status(201)
         .json(new ApiResponse(200, {}, "Created new category successfully"));
 });
-// POST Update Product
+// UPDATE User Role
+export const updateUserRole = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+    const { role } = req.body;
+    const user = await User.findById(id);
+    if (!user) {
+        return next(new ApiError(400, `No user found with this id:${id}`));
+    }
+    user.role = role;
+    await user.save();
+    return res
+        .status(200)
+        .json(new ApiResponse(200, {}, "User role updated successfully"));
+});
+// UPDATE Product
 export const updateProduct = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
-    const { title, description, price, stock, discount, category, color, size, featured, prevImages, } = req.body;
+    const { title, description, price, stock, discount, category, color, size, featured, prevImagesLen, } = req.body;
     const images = req.files;
+    console.log(req.body);
+    console.log(req.files);
     const product = await Product.findById(id);
+    const prevImages = product?.images;
+    console.log(product);
+    console.log(prevImages);
     if (!product) {
         return next(new ApiError(500, `No product found with this id:${id}`));
     }
-    if (prevImages.length === 0 && images.length === 0) {
+    if (Number(prevImagesLen) === 0 && images.length === 0) {
         return next(new ApiError(400, "Atleast 1 image is required"));
+    }
+    if (Number(prevImagesLen) + images.length > 4) {
+        return next(new ApiError(400, "Atmost 4 image only"));
     }
     const imagesLinks = [];
     if (images.length > 0) {
@@ -244,8 +252,13 @@ export const updateProduct = asyncHandler(async (req, res, next) => {
             }
         }
     }
-    if (prevImages.length > 0) {
-        imagesLinks.concat(prevImages);
+    if (prevImages?.length && prevImages.length > 0) {
+        prevImages.forEach((img) => {
+            imagesLinks.push({
+                url: img.url,
+                id: img.id,
+            });
+        });
     }
     const updatedProduct = await Product.findByIdAndUpdate(id, {
         title,
@@ -256,7 +269,7 @@ export const updateProduct = asyncHandler(async (req, res, next) => {
         color,
         size,
         category,
-        featured,
+        featured: featured === "on" ? true : false,
         images: imagesLinks,
     }, {
         new: true,
@@ -265,7 +278,7 @@ export const updateProduct = asyncHandler(async (req, res, next) => {
         .status(200)
         .json(new ApiResponse(200, { product: updatedProduct }, "Product updated successfully."));
 });
-// POST Update Category
+// UPDATE Category
 export const updateCategory = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
     const { name } = req.body;
@@ -283,7 +296,7 @@ export const updateCategory = asyncHandler(async (req, res, next) => {
         .status(200)
         .json(new ApiResponse(200, { category: updatedCategory }, "Category updated successfully."));
 });
-// POST Update Category
+// UPDATE Category
 export const updateColor = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
     const { name, value } = req.body;
@@ -301,7 +314,7 @@ export const updateColor = asyncHandler(async (req, res, next) => {
         .status(200)
         .json(new ApiResponse(200, { color: updatedColor }, "Color updated successfully."));
 });
-// POST Update Category
+// UPDATE Category
 export const updateSize = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
     const { name, value } = req.body;
@@ -319,7 +332,19 @@ export const updateSize = asyncHandler(async (req, res, next) => {
         .status(200)
         .json(new ApiResponse(200, { size: updatedSize }, "Size updated successfully."));
 });
-// POST Delete Product
+// DELETE User
+export const deleteUser = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) {
+        return next(new ApiError(400, `No user found with this id:${id}`));
+    }
+    await user.deleteOne();
+    return res
+        .status(200)
+        .json(new ApiResponse(200, {}, "User deleted successfully!"));
+});
+// DELETE Product
 export const deleteProduct = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
     const product = await Product.findById(id);
@@ -367,19 +392,7 @@ export const deleteSize = asyncHandler(async (req, res, next) => {
         .status(200)
         .json(new ApiResponse(200, {}, "Size deleted successfully!"));
 });
-// GET All Orders
-export const allOrders = asyncHandler(async (req, res, next) => {
-    const page = Number(req.query.page) || 1;
-    const limit = 2;
-    const skip = (page - 1) * limit;
-    const orders = await Order.find().skip(skip).limit(limit);
-    const totalOrders = await Order.countDocuments();
-    return res.status(200).json(new ApiResponse(200, {
-        orders,
-        totalOrders,
-    }));
-});
-// POST Update Order Status
+// UPDATE Order Status
 export const updateOrderStatus = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
     const order = await Order.findById(id);
@@ -390,7 +403,26 @@ export const updateOrderStatus = asyncHandler(async (req, res, next) => {
     //   updateStock()
     // })
 });
-// POST Delete Order
+// DELETE Product Image
+export const deleteProductImage = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+    const { imageId } = req.query;
+    const product = await Product.findById(id);
+    if (!product) {
+        return next(new ApiError(404, "Product not found!"));
+    }
+    await Product.updateOne({ _id: id }, {
+        $pull: {
+            images: {
+                id: imageId,
+            },
+        },
+    });
+    return res
+        .status(200)
+        .json(new ApiResponse(200, {}, "Image deleted successfully"));
+});
+// DELETE Order
 export const deleteOrder = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
     const order = await Order.findById(id);
@@ -406,7 +438,9 @@ export const deleteOrder = asyncHandler(async (req, res, next) => {
 export const refresh = asyncHandler(async (req, res, next) => {
     const cookies = req.cookies;
     if (!cookies?.refreshToken) {
-        return res.status(401).json(new ApiError(401, "Unauthorized request"));
+        return res
+            .status(401)
+            .json(new ApiError(401, "Unauthorized request"));
     }
     const refreshToken = cookies.refreshToken;
     const user = await User.findOne({ refreshToken });

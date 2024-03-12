@@ -17,11 +17,11 @@ export const isAuth = asyncHandler(async (req, _, next) => {
     req.user = user;
     next();
 });
-export const isAdmin = (req, res, next) => {
-    isAuth(req, res, () => {
-        if (req?.user?.role !== "admin") {
-            return next(new ApiError(405, "You are not allowed"));
-        }
-        next();
-    });
-};
+export const isAdmin = asyncHandler(async (req, _, next) => {
+    if (req?.user?.role !== "admin") {
+        console.log("Hello");
+        console.log(req.user);
+        return next(new ApiError(405, "You are not allowed"));
+    }
+    next();
+});

@@ -121,5 +121,15 @@ userSchema.methods.generateResetPasswordToken = function () {
     this.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
     return resetToken;
 };
+userSchema.methods.addItemToCart = function (product) {
+    const isExistingItem = this.cart.findIndex((item) => item.productId === product.productId);
+    if (isExistingItem !== -1) {
+        this.cart[isExistingItem].quantity++;
+    }
+    else {
+        this.cart.push(product);
+    }
+};
+userSchema.methods.removeItemFromCart = function (product) { };
 const User = model("User", userSchema);
 export default User;

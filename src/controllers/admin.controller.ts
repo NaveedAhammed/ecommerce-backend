@@ -202,7 +202,6 @@ export const createProduct = asyncHandler(
 			if (result?.secure_url) {
 				imagesLinks.push({
 					url: result?.secure_url,
-					id: result?.public_id,
 				});
 			}
 		}
@@ -339,7 +338,6 @@ export const updateProduct = asyncHandler(
 				if (result?.secure_url) {
 					imagesLinks.push({
 						url: result?.secure_url,
-						id: result?.public_id,
 					});
 				}
 			}
@@ -348,7 +346,6 @@ export const updateProduct = asyncHandler(
 			prevImages.forEach((img) => {
 				imagesLinks.push({
 					url: img.url,
-					id: img.id,
 				});
 			});
 		}
@@ -584,7 +581,7 @@ export const deleteProductImage = asyncHandler(
 			{
 				$pull: {
 					images: {
-						id: imageId,
+						_id: imageId,
 					},
 				},
 			}

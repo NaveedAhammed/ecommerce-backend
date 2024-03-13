@@ -142,7 +142,6 @@ export const createProduct = asyncHandler(async (req, res, next) => {
         if (result?.secure_url) {
             imagesLinks.push({
                 url: result?.secure_url,
-                id: result?.public_id,
             });
         }
     }
@@ -247,7 +246,6 @@ export const updateProduct = asyncHandler(async (req, res, next) => {
             if (result?.secure_url) {
                 imagesLinks.push({
                     url: result?.secure_url,
-                    id: result?.public_id,
                 });
             }
         }
@@ -256,7 +254,6 @@ export const updateProduct = asyncHandler(async (req, res, next) => {
         prevImages.forEach((img) => {
             imagesLinks.push({
                 url: img.url,
-                id: img.id,
             });
         });
     }
@@ -414,7 +411,7 @@ export const deleteProductImage = asyncHandler(async (req, res, next) => {
     await Product.updateOne({ _id: id }, {
         $pull: {
             images: {
-                id: imageId,
+                _id: imageId,
             },
         },
     });

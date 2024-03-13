@@ -62,9 +62,9 @@ router.route("/product/delete/:id").delete(isAuth, isAdmin, deleteProduct);
 // DELETE order
 router.route("/order/delete/:id").delete(isAuth, isAdmin, deleteOrder);
 // DELETE category
-router.route("/category/delete/:id").put(isAuth, isAdmin, deleteCategory);
+router.route("/category/delete/:id").delete(isAuth, isAdmin, deleteCategory);
 // DELETE color
-router.route("/color/delete/:id").put(isAuth, isAdmin, deleteColor);
+router.route("/color/delete/:id").delete(isAuth, isAdmin, deleteColor);
 // DELETE size
 router.route("/size/delete/:id").delete(isAuth, isAdmin, deleteSize);
 // DELETE product image

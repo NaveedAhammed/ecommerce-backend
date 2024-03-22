@@ -8,8 +8,8 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { sendEmail } from "../utils/sendEmail.js";
 // POST Register User
 export const registerUser = asyncHandler(async (req, res, next) => {
-    const { username, email, password, gender } = req.body;
-    if (!username || !email || !password || !gender) {
+    const { username, email, password } = req.body;
+    if (!username || !email || !password) {
         return next(new ApiError(402, "Please enter valid inputs"));
     }
     const isExistingUser = await User.findOne({
@@ -18,7 +18,7 @@ export const registerUser = asyncHandler(async (req, res, next) => {
     if (isExistingUser) {
         return next(new ApiError(409, "User with email or username already exists"));
     }
-    const user = new User({ username, email, password, gender });
+    const user = new User({ username, email, password });
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
     user.refreshToken = refreshToken;
@@ -207,7 +207,9 @@ export const uploadProfilePicture = asyncHandler(async (req, res, next) => {
 export const refresh = asyncHandler(async (req, res, next) => {
     const cookies = req.cookies;
     if (!cookies?.refreshToken) {
-        return res.status(401).json(new ApiError(401, "Unauthorized request"));
+        return res
+            .status(401)
+            .json(new ApiError(401, "Unauthorized request"));
     }
     const refreshToken = cookies.refreshToken;
     const user = await User.findOne({ refreshToken });

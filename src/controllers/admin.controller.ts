@@ -12,6 +12,7 @@ import { IGetUserAuthInfoRequest } from "../types/request.js";
 import Size from "../models/size.model.js";
 import Color from "../models/color.model.js";
 import Category from "../models/category.model.js";
+import Billboard from "../models/billboards.model.js";
 
 // POST Admin Login
 export const adminLogin = asyncHandler(
@@ -97,11 +98,25 @@ export const allUsers = asyncHandler(
 export const allCategories = asyncHandler(
 	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
 		const categories = await Category.find();
-		const toatlCategories = await Category.countDocuments();
+		const totalCategories = await Category.countDocuments();
 		return res.status(200).json(
 			new ApiResponse(200, {
 				categories,
-				toatlCategories,
+				totalCategories,
+			})
+		);
+	}
+);
+
+// GET All Billboards
+export const allBillboards = asyncHandler(
+	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+		const billboards = await Billboard.find().populate("category", "name");
+		const totalBillboards = await Billboard.countDocuments();
+		return res.status(200).json(
+			new ApiResponse(200, {
+				billboards,
+				totalBillboards,
 			})
 		);
 	}
@@ -139,7 +154,7 @@ export const allColors = asyncHandler(
 export const allProducts = asyncHandler(
 	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
 		const page = Number(req.query.page) || 1;
-		const limit = 2;
+		const limit = 5;
 		const skip = (page - 1) * limit;
 		const products = await Product.find()
 			.populate("category", "name")
@@ -258,7 +273,13 @@ export const createColor = asyncHandler(
 		await color.save();
 		return res
 			.status(201)
-			.json(new ApiResponse(200, {}, "Created new color successfully"));
+			.json(
+				new ApiResponse(
+					200,
+					{ color },
+					"Created new color successfully"
+				)
+			);
 	}
 );
 
@@ -275,7 +296,46 @@ export const createCategory = asyncHandler(
 		return res
 			.status(201)
 			.json(
-				new ApiResponse(200, {}, "Created new category successfully")
+				new ApiResponse(
+					200,
+					{ category },
+					"Created new category successfully"
+				)
+			);
+	}
+);
+
+// POST Create Billboard
+export const createBillboard = asyncHandler(
+	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+		const { title, categoryId } = req.body;
+		const image = req.file;
+		if (!title || !categoryId) {
+			return next(new ApiError(402, "Please enter valid inputs"));
+		}
+		if (!image) {
+			return next(
+				new ApiError(402, "Please give an image for billboard")
+			);
+		}
+		const result = await uploadOnCloudinary(image?.path);
+		const billboard = new Billboard({
+			title,
+			category: categoryId,
+			imageUrl: result?.secure_url,
+		});
+		await billboard.save();
+		const newBillboard = await Billboard.findById(billboard._id).populate(
+			"category"
+		);
+		return res
+			.status(201)
+			.json(
+				new ApiResponse(
+					200,
+					{ billboard: newBillboard },
+					"Created new billboard successfully"
+				)
 			);
 	}
 );
@@ -366,7 +426,10 @@ export const updateProduct = asyncHandler(
 			{
 				new: true,
 			}
-		);
+		)
+			.populate("category", "name")
+			.populate("color", "name value")
+			.populate("size", "name value");
 		return res
 			.status(200)
 			.json(
@@ -412,7 +475,7 @@ export const updateCategory = asyncHandler(
 	}
 );
 
-// UPDATE Category
+// UPDATE Color
 export const updateColor = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
 		const { id } = req.params;
@@ -443,7 +506,7 @@ export const updateColor = asyncHandler(
 	}
 );
 
-// UPDATE Category
+// UPDATE Size
 export const updateSize = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
 		const { id } = req.params;
@@ -469,6 +532,52 @@ export const updateSize = asyncHandler(
 					200,
 					{ size: updatedSize },
 					"Size updated successfully."
+				)
+			);
+	}
+);
+
+// UPDATE Billboard
+export const updateBillboard = asyncHandler(
+	async (req: Request, res: Response, next: NextFunction) => {
+		const { id } = req.params;
+		const { title, categoryId, imageUrl } = req.body;
+		const image = req?.file;
+		console.log(title, categoryId, image, imageUrl);
+		if (!title || !categoryId) {
+			return next(new ApiError(402, "Please enter valid inputs"));
+		}
+		if (!image && !imageUrl) {
+			return next(new ApiError(402, "Please give an image to billboard"));
+		}
+		const billboard = await Billboard.findById(id);
+		if (!billboard) {
+			return next(
+				new ApiError(500, `No billboard found with this id:${id}`)
+			);
+		}
+		let result;
+		if (image) {
+			result = await uploadOnCloudinary(image?.path);
+		}
+		const updatedBillboard = await Billboard.findByIdAndUpdate(
+			id,
+			{
+				title,
+				category: categoryId,
+				imageUrl: result ? result.secure_url : imageUrl,
+			},
+			{
+				new: true,
+			}
+		).populate("category", "name");
+		return res
+			.status(200)
+			.json(
+				new ApiResponse(
+					200,
+					{ billboard: updatedBillboard },
+					"Billboard updated successfully."
 				)
 			);
 	}

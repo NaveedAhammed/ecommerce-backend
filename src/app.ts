@@ -10,11 +10,15 @@ const PORT: string | undefined = process.env.PORT;
 const app = express();
 
 app.use(
-  cors({
-    origin: "http://localhost:5173",
-    credentials: true,
-    optionsSuccessStatus: 200,
-  })
+	cors({
+		origin: [
+			"http://localhost:5173",
+			"http://localhost:5174",
+			"http://localhost:5175",
+		],
+		credentials: true,
+		optionsSuccessStatus: 200,
+	})
 );
 app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: true, limit: "5mb" }));
@@ -34,11 +38,11 @@ import { error } from "./middlewares/error.middleware.js";
 app.use(error);
 
 connect()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`Server is running on http://localhost:${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.log(err);
-  });
+	.then(() => {
+		app.listen(PORT, () => {
+			console.log(`Server is running on http://localhost:${PORT}`);
+		});
+	})
+	.catch((err) => {
+		console.log(err);
+	});

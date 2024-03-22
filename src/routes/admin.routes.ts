@@ -3,12 +3,14 @@ import multer from "multer";
 import { Router } from "express";
 import {
 	adminLogin,
+	allBillboards,
 	allCategories,
 	allColors,
 	allOrders,
 	allProducts,
 	allSizes,
 	allUsers,
+	createBillboard,
 	createCategory,
 	createColor,
 	createProduct,
@@ -22,6 +24,7 @@ import {
 	deleteUser,
 	refresh,
 	singleUser,
+	updateBillboard,
 	updateCategory,
 	updateColor,
 	updateProduct,
@@ -50,6 +53,8 @@ const router: Router = Router();
 router.route("/users").get(isAuth, isAdmin, allUsers);
 // GET all categories
 router.route("/categories").get(isAuth, isAdmin, allCategories);
+// GET all billboards
+router.route("/billboards").get(isAuth, isAdmin, allBillboards);
 // GET all colors
 router.route("/colors").get(isAuth, isAdmin, allColors);
 // GET all sizes
@@ -76,6 +81,10 @@ router.route("/size/new").post(isAuth, isAdmin, createSize);
 router.route("/color/new").post(isAuth, isAdmin, createColor);
 // POST create category
 router.route("/category/new").post(isAuth, isAdmin, createCategory);
+// POST create billboard
+router
+	.route("/billboard/new")
+	.post(isAuth, isAdmin, upload.single("image"), createBillboard);
 
 // <---------- PUT REQUEST ---------->
 //PUT user role
@@ -86,6 +95,10 @@ router.route("/category/update/:id").put(isAuth, isAdmin, updateCategory);
 router.route("/size/update/:id").put(isAuth, isAdmin, updateSize);
 // PUT color
 router.route("/color/update/:id").put(isAuth, isAdmin, updateColor);
+// PUT billboard
+router
+	.route("/billboard/update/:id")
+	.put(isAuth, isAdmin, upload.single("image"), updateBillboard);
 router
 	.route("/product/update/:id")
 	.put(isAuth, isAdmin, upload.array("images"), updateProduct);

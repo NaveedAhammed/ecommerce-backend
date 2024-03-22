@@ -28,7 +28,6 @@ const userSchema = new Schema({
     },
     gender: {
         type: String,
-        required: [true, "Gender is required"],
         enum: {
             values: ["male", "female"],
             message: "{VALUE} is not supported",

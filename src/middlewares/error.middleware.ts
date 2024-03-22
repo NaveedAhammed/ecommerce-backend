@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { ApiError } from "../utils/ApiError.js";
 
 const error = (err: any, req: Request, res: Response, next: NextFunction) => {
-	console.log(err);
+	console.log(err.message);
 	if (err.message === "jwt expired") {
 		return res.status(403).json(new ApiError(403, "Forbidden"));
 	}

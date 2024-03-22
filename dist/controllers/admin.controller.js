@@ -9,6 +9,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import Size from "../models/size.model.js";
 import Color from "../models/color.model.js";
 import Category from "../models/category.model.js";
+import Billboard from "../models/billboards.model.js";
 // POST Admin Login
 export const adminLogin = asyncHandler(async (req, res, next) => {
     const { usernameOrEmail, password } = req.body;
@@ -73,10 +74,19 @@ export const allUsers = asyncHandler(async (req, res, next) => {
 // GET All Categories
 export const allCategories = asyncHandler(async (req, res, next) => {
     const categories = await Category.find();
-    const toatlCategories = await Category.countDocuments();
+    const totalCategories = await Category.countDocuments();
     return res.status(200).json(new ApiResponse(200, {
         categories,
-        toatlCategories,
+        totalCategories,
+    }));
+});
+// GET All Billboards
+export const allBillboards = asyncHandler(async (req, res, next) => {
+    const billboards = await Billboard.find().populate("category", "name");
+    const totalBillboards = await Billboard.countDocuments();
+    return res.status(200).json(new ApiResponse(200, {
+        billboards,
+        totalBillboards,
     }));
 });
 // GET All Sizes
@@ -100,7 +110,7 @@ export const allColors = asyncHandler(async (req, res, next) => {
 // GET All Products
 export const allProducts = asyncHandler(async (req, res, next) => {
     const page = Number(req.query.page) || 1;
-    const limit = 2;
+    const limit = 5;
     const skip = (page - 1) * limit;
     const products = await Product.find()
         .populate("category", "name")
@@ -190,7 +200,7 @@ export const createColor = asyncHandler(async (req, res, next) => {
     await color.save();
     return res
         .status(201)
-        .json(new ApiResponse(200, {}, "Created new color successfully"));
+        .json(new ApiResponse(200, { color }, "Created new color successfully"));
 });
 // POST Create Category
 export const createCategory = asyncHandler(async (req, res, next) => {
@@ -203,7 +213,29 @@ export const createCategory = asyncHandler(async (req, res, next) => {
     await category.save();
     return res
         .status(201)
-        .json(new ApiResponse(200, {}, "Created new category successfully"));
+        .json(new ApiResponse(200, { category }, "Created new category successfully"));
+});
+// POST Create Billboard
+export const createBillboard = asyncHandler(async (req, res, next) => {
+    const { title, categoryId } = req.body;
+    const image = req.file;
+    if (!title || !categoryId) {
+        return next(new ApiError(402, "Please enter valid inputs"));
+    }
+    if (!image) {
+        return next(new ApiError(402, "Please give an image for billboard"));
+    }
+    const result = await uploadOnCloudinary(image?.path);
+    const billboard = new Billboard({
+        title,
+        category: categoryId,
+        imageUrl: result?.secure_url,
+    });
+    await billboard.save();
+    const newBillboard = await Billboard.findById(billboard._id).populate("category");
+    return res
+        .status(201)
+        .json(new ApiResponse(200, { billboard: newBillboard }, "Created new billboard successfully"));
 });
 // UPDATE User Role
 export const updateUserRole = asyncHandler(async (req, res, next) => {
@@ -270,7 +302,10 @@ export const updateProduct = asyncHandler(async (req, res, next) => {
         images: imagesLinks,
     }, {
         new: true,
-    });
+    })
+        .populate("category", "name")
+        .populate("color", "name value")
+        .populate("size", "name value");
     return res
         .status(200)
         .json(new ApiResponse(200, { product: updatedProduct }, "Product updated successfully."));
@@ -293,7 +328,7 @@ export const updateCategory = asyncHandler(async (req, res, next) => {
         .status(200)
         .json(new ApiResponse(200, { category: updatedCategory }, "Category updated successfully."));
 });
-// UPDATE Category
+// UPDATE Color
 export const updateColor = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
     const { name, value } = req.body;
@@ -311,7 +346,7 @@ export const updateColor = asyncHandler(async (req, res, next) => {
         .status(200)
         .json(new ApiResponse(200, { color: updatedColor }, "Color updated successfully."));
 });
-// UPDATE Category
+// UPDATE Size
 export const updateSize = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
     const { name, value } = req.body;
@@ -328,6 +363,37 @@ export const updateSize = asyncHandler(async (req, res, next) => {
     return res
         .status(200)
         .json(new ApiResponse(200, { size: updatedSize }, "Size updated successfully."));
+});
+// UPDATE Billboard
+export const updateBillboard = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+    const { title, categoryId, imageUrl } = req.body;
+    const image = req?.file;
+    console.log(title, categoryId, image, imageUrl);
+    if (!title || !categoryId) {
+        return next(new ApiError(402, "Please enter valid inputs"));
+    }
+    if (!image && !imageUrl) {
+        return next(new ApiError(402, "Please give an image to billboard"));
+    }
+    const billboard = await Billboard.findById(id);
+    if (!billboard) {
+        return next(new ApiError(500, `No billboard found with this id:${id}`));
+    }
+    let result;
+    if (image) {
+        result = await uploadOnCloudinary(image?.path);
+    }
+    const updatedBillboard = await Billboard.findByIdAndUpdate(id, {
+        title,
+        category: categoryId,
+        imageUrl: result ? result.secure_url : imageUrl,
+    }, {
+        new: true,
+    }).populate("category", "name");
+    return res
+        .status(200)
+        .json(new ApiResponse(200, { billboard: updatedBillboard }, "Billboard updated successfully."));
 });
 // DELETE User
 export const deleteUser = asyncHandler(async (req, res, next) => {

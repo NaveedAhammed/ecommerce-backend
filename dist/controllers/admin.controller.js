@@ -6,10 +6,11 @@ import { ApiError } from "../utils/ApiError.js";
 import Product from "../models/product.model.js";
 import Order from "../models/order.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
-import Size from "../models/size.model.js";
+import Unit from "../models/unit.model.js";
 import Color from "../models/color.model.js";
-import Category from "../models/category.model.js";
+import ChildCategory from "../models/childCategory.model.js";
 import Billboard from "../models/billboards.model.js";
+import ParentCategory from "../models/parentCategory.model.js";
 // POST Admin Login
 export const adminLogin = asyncHandler(async (req, res, next) => {
     const { usernameOrEmail, password } = req.body;
@@ -71,18 +72,27 @@ export const allUsers = asyncHandler(async (req, res, next) => {
         totalUsers,
     }));
 });
-// GET All Categories
-export const allCategories = asyncHandler(async (req, res, next) => {
-    const categories = await Category.find();
-    const totalCategories = await Category.countDocuments();
+// GET All Child Categories
+export const allChildCategories = asyncHandler(async (req, res, next) => {
+    const childCategories = await ChildCategory.find().populate("parentCategory");
+    const totalChildCategories = await ChildCategory.countDocuments();
     return res.status(200).json(new ApiResponse(200, {
-        categories,
-        totalCategories,
+        childCategories,
+        totalChildCategories,
+    }));
+});
+// GET All Parent Categories
+export const allParentCategories = asyncHandler(async (req, res, next) => {
+    const parentCategories = await ParentCategory.find();
+    const totalParentCategories = await ParentCategory.countDocuments();
+    return res.status(200).json(new ApiResponse(200, {
+        parentCategories,
+        totalParentCategories,
     }));
 });
 // GET All Billboards
 export const allBillboards = asyncHandler(async (req, res, next) => {
-    const billboards = await Billboard.find().populate("category", "name");
+    const billboards = await Billboard.find().populate("category");
     const totalBillboards = await Billboard.countDocuments();
     return res.status(200).json(new ApiResponse(200, {
         billboards,
@@ -91,11 +101,11 @@ export const allBillboards = asyncHandler(async (req, res, next) => {
 });
 // GET All Sizes
 export const allSizes = asyncHandler(async (req, res, next) => {
-    const sizes = await Size.find();
-    const totalSizes = await Size.countDocuments();
+    const units = await Unit.find();
+    const totalUnits = await Unit.countDocuments();
     return res.status(200).json(new ApiResponse(200, {
-        sizes,
-        totalSizes,
+        units,
+        totalUnits,
     }));
 });
 // GET All Colors
@@ -113,9 +123,14 @@ export const allProducts = asyncHandler(async (req, res, next) => {
     const limit = 5;
     const skip = (page - 1) * limit;
     const products = await Product.find()
-        .populate("category", "name")
-        .populate("color", "name value")
-        .populate("size", "name value")
+        .populate({
+        path: "category",
+        populate: {
+            path: "parentCategory",
+        },
+    })
+        .populate("color")
+        .populate("unit")
         .limit(limit)
         .skip(skip);
     const totalProducts = await Product.countDocuments();
@@ -138,7 +153,7 @@ export const singleUser = asyncHandler(async (req, res, next) => {
 });
 // POST Create Product
 export const createProduct = asyncHandler(async (req, res, next) => {
-    const { title, description, price, stock, discount, category, color, size, featured, } = req.body;
+    const { title, price, stock, childCategoryId, colorId, unitId, discount, description, featured, } = req.body;
     const images = req.files;
     if (images.length === 0) {
         return next(new ApiError(400, "Atleast 1 image is required"));
@@ -157,35 +172,46 @@ export const createProduct = asyncHandler(async (req, res, next) => {
     }
     const product = new Product({
         title,
-        price,
         description,
-        category,
+        price,
+        category: childCategoryId,
+        color: colorId ? colorId : null,
+        discount: discount ? discount : 0,
+        unit: unitId ? unitId : null,
         stock,
-        discount,
+        featured: req.body.featured === "on" ? true : false,
         images: imagesLinks,
-        color,
-        size,
-        featured: featured === "on" ? true : false,
     });
     await product.save();
+    const newProduct = await Product.findById(product._id)
+        .populate({
+        path: "category",
+        populate: {
+            path: "parentCategory",
+        },
+    })
+        .populate("color")
+        .populate("unit");
+    const totalProducts = await Product.countDocuments();
     return res
         .status(201)
-        .json(new ApiResponse(200, {}, "Created new product successfully"));
+        .json(new ApiResponse(200, { product: newProduct, totalProducts }, "Created new product successfully"));
 });
-// POST Create Size
-export const createSize = asyncHandler(async (req, res, next) => {
-    const { name, value } = req.body;
+// POST Create Unit
+export const createUnit = asyncHandler(async (req, res, next) => {
+    const { name, value, shortHand } = req.body;
     if (!name || !value) {
         return next(new ApiError(402, "Please enter valid inputs"));
     }
-    const size = new Size({
+    const unit = new Unit({
         name,
         value,
+        shortHand: shortHand ? shortHand : null,
     });
-    await size.save();
+    await unit.save();
     return res
         .status(201)
-        .json(new ApiResponse(200, { size }, "Created new size successfully"));
+        .json(new ApiResponse(200, { unit }, "Created new unit successfully"));
 });
 // POST Create Color
 export const createColor = asyncHandler(async (req, res, next) => {
@@ -202,18 +228,37 @@ export const createColor = asyncHandler(async (req, res, next) => {
         .status(201)
         .json(new ApiResponse(200, { color }, "Created new color successfully"));
 });
-// POST Create Category
-export const createCategory = asyncHandler(async (req, res, next) => {
+// POST Create Child Category
+export const createChildCategory = asyncHandler(async (req, res, next) => {
+    const { parentCategoryId, name } = req.body;
+    console.log(req.body);
+    if (!parentCategoryId || !name) {
+        return next(new ApiError(402, "Please enter valid inputs"));
+    }
+    const childCategory = new ChildCategory({
+        parentCategory: parentCategoryId,
+        name,
+    });
+    await childCategory.save();
+    const newChildCategory = await ChildCategory.findById(childCategory._id).populate("parentCategory", "name");
+    return res
+        .status(201)
+        .json(new ApiResponse(200, { childCategory: newChildCategory }, "Created new child category successfully"));
+});
+// POST Create Parent Category
+export const createParentCategory = asyncHandler(async (req, res, next) => {
     const { name } = req.body;
     console.log(req.body);
     if (!name) {
         return next(new ApiError(402, "Please enter valid inputs"));
     }
-    const category = new Category({ name });
-    await category.save();
+    const parentCategory = new ParentCategory({
+        name,
+    });
+    await parentCategory.save();
     return res
         .status(201)
-        .json(new ApiResponse(200, { category }, "Created new category successfully"));
+        .json(new ApiResponse(200, { parentCategory }, "Created new parent category successfully"));
 });
 // POST Create Billboard
 export const createBillboard = asyncHandler(async (req, res, next) => {
@@ -254,21 +299,18 @@ export const updateUserRole = asyncHandler(async (req, res, next) => {
 // UPDATE Product
 export const updateProduct = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
-    const { title, description, price, stock, discount, category, color, size, featured, prevImagesLen, } = req.body;
+    const { title, description, price, stock, discount, childCategoryId, colorId, unitId, featured, } = req.body;
+    console.log(req.body, req.file);
     const images = req.files;
-    console.log(req.body);
-    console.log(req.files);
     const product = await Product.findById(id);
     const prevImages = product?.images;
-    console.log(product);
-    console.log(prevImages);
     if (!product) {
         return next(new ApiError(500, `No product found with this id:${id}`));
     }
-    if (Number(prevImagesLen) === 0 && images.length === 0) {
+    if (product.images.length === 0 && images.length === 0) {
         return next(new ApiError(400, "Atleast 1 image is required"));
     }
-    if (Number(prevImagesLen) + images.length > 4) {
+    if (product.images.length + images.length > 4) {
         return next(new ApiError(400, "Atmost 4 image only"));
     }
     const imagesLinks = [];
@@ -293,40 +335,64 @@ export const updateProduct = asyncHandler(async (req, res, next) => {
         title,
         description,
         price,
-        discount,
+        discount: discount ? discount : 0,
         stock,
-        color,
-        size,
-        category,
+        color: colorId ? colorId : null,
+        unit: unitId ? unitId : null,
+        category: childCategoryId ? childCategoryId : null,
         featured: featured === "on" ? true : false,
         images: imagesLinks,
     }, {
         new: true,
     })
-        .populate("category", "name")
-        .populate("color", "name value")
-        .populate("size", "name value");
+        .populate({
+        path: "category",
+        populate: {
+            path: "parentCategory",
+        },
+    })
+        .populate("color")
+        .populate("unit");
+    const totalProducts = await Product.countDocuments();
     return res
         .status(200)
-        .json(new ApiResponse(200, { product: updatedProduct }, "Product updated successfully."));
+        .json(new ApiResponse(200, { product: updatedProduct, totalProducts }, "Product updated successfully."));
 });
-// UPDATE Category
-export const updateCategory = asyncHandler(async (req, res, next) => {
+// UPDATE Child Category
+export const updateChildCategory = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+    const { name, parentCategoryId } = req.body;
+    if (!name || !parentCategoryId) {
+        return next(new ApiError(402, "Please enter valid inputs"));
+    }
+    const childCategory = await ChildCategory.findById(id);
+    if (!childCategory) {
+        return next(new ApiError(500, `No child category found with this id:${id}`));
+    }
+    const updatedChildCategory = await ChildCategory.findByIdAndUpdate(id, { name, parentCategory: parentCategoryId }, {
+        new: true,
+    }).populate("parentCategory", "name");
+    return res
+        .status(200)
+        .json(new ApiResponse(200, { childCategory: updatedChildCategory }, "Child category updated successfully."));
+});
+// UPDATE Parent Category
+export const updateParentCategory = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
     const { name } = req.body;
     if (!name) {
         return next(new ApiError(402, "Please enter valid inputs"));
     }
-    const category = await Category.findById(id);
-    if (!category) {
-        return next(new ApiError(500, `No category found with this id:${id}`));
+    const parentCategory = await ParentCategory.findById(id);
+    if (!parentCategory) {
+        return next(new ApiError(500, `No parent category found with this id:${id}`));
     }
-    const updatedCategory = await Category.findByIdAndUpdate(id, { name }, {
+    const updatedParentCategory = await ParentCategory.findByIdAndUpdate(id, { name }, {
         new: true,
     });
     return res
         .status(200)
-        .json(new ApiResponse(200, { category: updatedCategory }, "Category updated successfully."));
+        .json(new ApiResponse(200, { category: updatedParentCategory }, "Parent category updated successfully."));
 });
 // UPDATE Color
 export const updateColor = asyncHandler(async (req, res, next) => {
@@ -346,23 +412,23 @@ export const updateColor = asyncHandler(async (req, res, next) => {
         .status(200)
         .json(new ApiResponse(200, { color: updatedColor }, "Color updated successfully."));
 });
-// UPDATE Size
-export const updateSize = asyncHandler(async (req, res, next) => {
+// UPDATE Unit
+export const updateUnit = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
-    const { name, value } = req.body;
+    const { name, value, shortHand } = req.body;
     if (!name || !value) {
         return next(new ApiError(402, "Please enter valid inputs"));
     }
-    const size = await Size.findById(id);
-    if (!size) {
-        return next(new ApiError(500, `No size found with this id:${id}`));
+    const unit = await Unit.findById(id);
+    if (!unit) {
+        return next(new ApiError(500, `No unit found with this id:${id}`));
     }
-    const updatedSize = await Size.findByIdAndUpdate(id, { name, value }, {
+    const updatedUnit = await Unit.findByIdAndUpdate(id, { name, value, shortHand: shortHand ? shortHand : null }, {
         new: true,
     });
     return res
         .status(200)
-        .json(new ApiResponse(200, { size: updatedSize }, "Size updated successfully."));
+        .json(new ApiResponse(200, { unit: updatedUnit }, "Unit updated successfully."));
 });
 // UPDATE Billboard
 export const updateBillboard = asyncHandler(async (req, res, next) => {
@@ -419,17 +485,29 @@ export const deleteProduct = asyncHandler(async (req, res, next) => {
         .status(200)
         .json(new ApiResponse(200, {}, "Product deleted successfully!"));
 });
-// POST Delete Category
-export const deleteCategory = asyncHandler(async (req, res, next) => {
+// POST Delete Child Category
+export const deleteChildCategory = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
-    const category = await Category.findById(id);
-    if (!category) {
-        return next(new ApiError(500, `No category found with this id:${id}`));
+    const childCategory = await ChildCategory.findById(id);
+    if (!childCategory) {
+        return next(new ApiError(500, `No child category found with this id:${id}`));
     }
-    await category.deleteOne();
+    await childCategory.deleteOne();
     return res
         .status(200)
-        .json(new ApiResponse(200, {}, "Category deleted successfully!"));
+        .json(new ApiResponse(200, {}, "Child category deleted successfully!"));
+});
+// POST Delete Parent Category
+export const deleteParentCategory = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+    const parentCategory = await ParentCategory.findById(id);
+    if (!parentCategory) {
+        return next(new ApiError(500, `No parent category found with this id:${id}`));
+    }
+    await parentCategory.deleteOne();
+    return res
+        .status(200)
+        .json(new ApiResponse(200, {}, "Parent category deleted successfully!"));
 });
 // POST Delete Color
 export const deleteColor = asyncHandler(async (req, res, next) => {
@@ -443,17 +521,17 @@ export const deleteColor = asyncHandler(async (req, res, next) => {
         .status(200)
         .json(new ApiResponse(200, {}, "Color deleted successfully!"));
 });
-// POST Delete Size
-export const deleteSize = asyncHandler(async (req, res, next) => {
+// POST Delete Unit
+export const deleteUnit = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
-    const size = await Size.findById(id);
-    if (!size) {
-        return next(new ApiError(500, `No size found with this id:${id}`));
+    const unit = await Unit.findById(id);
+    if (!unit) {
+        return next(new ApiError(500, `No unit found with this id:${id}`));
     }
-    await size.deleteOne();
+    await unit.deleteOne();
     return res
         .status(200)
-        .json(new ApiResponse(200, {}, "Size deleted successfully!"));
+        .json(new ApiResponse(200, {}, "Unit deleted successfully!"));
 });
 // UPDATE Order Status
 export const updateOrderStatus = asyncHandler(async (req, res, next) => {

@@ -27,9 +27,9 @@ const productSchema = new Schema({
         type: Types.ObjectId,
         ref: "Color",
     },
-    size: {
+    unit: {
         type: Types.ObjectId,
-        ref: "Size",
+        ref: "Unit",
     },
     featured: {
         type: Boolean,
@@ -51,7 +51,8 @@ const productSchema = new Schema({
     },
     category: {
         type: Types.ObjectId,
-        ref: "Category",
+        ref: "ChildCategory",
+        required: [true, "Product category is required"],
     },
     reviews: [
         {

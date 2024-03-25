@@ -4,31 +4,35 @@ import { Router } from "express";
 import {
 	adminLogin,
 	allBillboards,
-	allCategories,
+	allChildCategories,
 	allColors,
 	allOrders,
+	allParentCategories,
 	allProducts,
 	allSizes,
 	allUsers,
 	createBillboard,
-	createCategory,
+	createChildCategory,
 	createColor,
+	createParentCategory,
 	createProduct,
-	createSize,
-	deleteCategory,
+	createUnit,
+	deleteChildCategory,
 	deleteColor,
 	deleteOrder,
+	deleteParentCategory,
 	deleteProduct,
 	deleteProductImage,
-	deleteSize,
+	deleteUnit,
 	deleteUser,
 	refresh,
 	singleUser,
 	updateBillboard,
-	updateCategory,
+	updateChildCategory,
 	updateColor,
+	updateParentCategory,
 	updateProduct,
-	updateSize,
+	updateUnit,
 	updateUserRole,
 } from "../controllers/admin.controller.js";
 import { isAdmin, isAuth } from "../middlewares/auth.middleware.js";
@@ -51,14 +55,16 @@ const router: Router = Router();
 // <---------- GET REQUEST ---------->
 // GET all users
 router.route("/users").get(isAuth, isAdmin, allUsers);
-// GET all categories
-router.route("/categories").get(isAuth, isAdmin, allCategories);
+// GET all child categories
+router.route("/categories/child").get(isAuth, isAdmin, allChildCategories);
+// GET all parent categories
+router.route("/categories/parent").get(isAuth, isAdmin, allParentCategories);
 // GET all billboards
 router.route("/billboards").get(isAuth, isAdmin, allBillboards);
 // GET all colors
 router.route("/colors").get(isAuth, isAdmin, allColors);
 // GET all sizes
-router.route("/sizes").get(isAuth, isAdmin, allSizes);
+router.route("/units").get(isAuth, isAdmin, allSizes);
 // GET single user
 router.route("/users/:id").get(isAuth, isAdmin, singleUser);
 // GET all orders
@@ -75,12 +81,16 @@ router.route("/login").post(adminLogin);
 router
 	.route("/product/new")
 	.post(isAuth, isAdmin, upload.array("images"), createProduct);
-// POST create size
-router.route("/size/new").post(isAuth, isAdmin, createSize);
+// POST create unit
+router.route("/unit/new").post(isAuth, isAdmin, createUnit);
 // POST create color
 router.route("/color/new").post(isAuth, isAdmin, createColor);
+// POST create child category
+router.route("/category/child/new").post(isAuth, isAdmin, createChildCategory);
 // POST create category
-router.route("/category/new").post(isAuth, isAdmin, createCategory);
+router
+	.route("/category/parent/new")
+	.post(isAuth, isAdmin, createParentCategory);
 // POST create billboard
 router
 	.route("/billboard/new")
@@ -89,10 +99,16 @@ router
 // <---------- PUT REQUEST ---------->
 //PUT user role
 router.route("/users/:id").put(isAuth, isAdmin, updateUserRole);
+// PUT child category
+router
+	.route("/category/child/update/:id")
+	.put(isAuth, isAdmin, updateChildCategory);
 // PUT category
-router.route("/category/update/:id").put(isAuth, isAdmin, updateCategory);
-// PUT size
-router.route("/size/update/:id").put(isAuth, isAdmin, updateSize);
+router
+	.route("/category/parent/update/:id")
+	.put(isAuth, isAdmin, updateParentCategory);
+// PUT unit
+router.route("/unit/update/:id").put(isAuth, isAdmin, updateUnit);
 // PUT color
 router.route("/color/update/:id").put(isAuth, isAdmin, updateColor);
 // PUT billboard
@@ -110,12 +126,18 @@ router.route("/users/:id").delete(isAuth, isAdmin, deleteUser);
 router.route("/product/delete/:id").delete(isAuth, isAdmin, deleteProduct);
 // DELETE order
 router.route("/order/delete/:id").delete(isAuth, isAdmin, deleteOrder);
-// DELETE category
-router.route("/category/delete/:id").delete(isAuth, isAdmin, deleteCategory);
+// DELETE delete category
+router
+	.route("/category/child/delete/:id")
+	.delete(isAuth, isAdmin, deleteChildCategory);
+// DELETE parent category
+router
+	.route("/category/parent/delete/:id")
+	.delete(isAuth, isAdmin, deleteParentCategory);
 // DELETE color
 router.route("/color/delete/:id").delete(isAuth, isAdmin, deleteColor);
 // DELETE size
-router.route("/size/delete/:id").delete(isAuth, isAdmin, deleteSize);
+router.route("/unit/delete/:id").delete(isAuth, isAdmin, deleteUnit);
 // DELETE product image
 router
 	.route("/product/image/delete/:id")

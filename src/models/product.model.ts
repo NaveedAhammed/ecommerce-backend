@@ -1,7 +1,5 @@
 import { Schema, Types, model } from "mongoose";
-import { IColor } from "./color.model.js";
-import { ISize } from "./size.model.js";
-import { ICategory } from "./category.model.js";
+import { IChildCategory } from "./childCategory.model.js";
 
 interface IProduct {
 	title: string;
@@ -11,9 +9,9 @@ interface IProduct {
 	discount?: number;
 	images: ImageType[];
 	numRating?: number;
-	category?: Types.ObjectId;
+	category: Types.ObjectId | IChildCategory;
 	color?: Types.ObjectId;
-	size?: Types.ObjectId;
+	unit?: Types.ObjectId;
 	reviews: IReview[];
 	featured: boolean;
 }
@@ -58,9 +56,9 @@ const productSchema = new Schema<IProduct>(
 			type: Types.ObjectId,
 			ref: "Color",
 		},
-		size: {
+		unit: {
 			type: Types.ObjectId,
-			ref: "Size",
+			ref: "Unit",
 		},
 		featured: {
 			type: Boolean,
@@ -82,7 +80,8 @@ const productSchema = new Schema<IProduct>(
 		},
 		category: {
 			type: Types.ObjectId,
-			ref: "Category",
+			ref: "ChildCategory",
+			required: [true, "Product category is required"],
 		},
 		reviews: [
 			{

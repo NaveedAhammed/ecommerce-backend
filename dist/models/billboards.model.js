@@ -8,11 +8,15 @@ const categorySchema = new Schema({
     category: {
         type: Types.ObjectId,
         required: true,
-        ref: "Category",
+        ref: "ParentCategory",
     },
     imageUrl: {
         type: String,
         required: [true, "Billboard image is required"],
+    },
+    isActive: {
+        type: Boolean,
+        default: false,
     },
 }, { timestamps: true });
 const Billboard = model("Billboard", categorySchema);

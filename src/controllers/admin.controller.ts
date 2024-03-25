@@ -9,10 +9,11 @@ import Product, { ImageType } from "../models/product.model.js";
 import Order from "../models/order.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { IGetUserAuthInfoRequest } from "../types/request.js";
-import Size from "../models/size.model.js";
+import Unit from "../models/unit.model.js";
 import Color from "../models/color.model.js";
-import Category from "../models/category.model.js";
+import ChildCategory from "../models/childCategory.model.js";
 import Billboard from "../models/billboards.model.js";
+import ParentCategory from "../models/parentCategory.model.js";
 
 // POST Admin Login
 export const adminLogin = asyncHandler(
@@ -94,15 +95,31 @@ export const allUsers = asyncHandler(
 	}
 );
 
-// GET All Categories
-export const allCategories = asyncHandler(
+// GET All Child Categories
+export const allChildCategories = asyncHandler(
 	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-		const categories = await Category.find();
-		const totalCategories = await Category.countDocuments();
+		const childCategories = await ChildCategory.find().populate(
+			"parentCategory"
+		);
+		const totalChildCategories = await ChildCategory.countDocuments();
 		return res.status(200).json(
 			new ApiResponse(200, {
-				categories,
-				totalCategories,
+				childCategories,
+				totalChildCategories,
+			})
+		);
+	}
+);
+
+// GET All Parent Categories
+export const allParentCategories = asyncHandler(
+	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+		const parentCategories = await ParentCategory.find();
+		const totalParentCategories = await ParentCategory.countDocuments();
+		return res.status(200).json(
+			new ApiResponse(200, {
+				parentCategories,
+				totalParentCategories,
 			})
 		);
 	}
@@ -111,7 +128,7 @@ export const allCategories = asyncHandler(
 // GET All Billboards
 export const allBillboards = asyncHandler(
 	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-		const billboards = await Billboard.find().populate("category", "name");
+		const billboards = await Billboard.find().populate("category");
 		const totalBillboards = await Billboard.countDocuments();
 		return res.status(200).json(
 			new ApiResponse(200, {
@@ -125,12 +142,12 @@ export const allBillboards = asyncHandler(
 // GET All Sizes
 export const allSizes = asyncHandler(
 	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-		const sizes = await Size.find();
-		const totalSizes = await Size.countDocuments();
+		const units = await Unit.find();
+		const totalUnits = await Unit.countDocuments();
 		return res.status(200).json(
 			new ApiResponse(200, {
-				sizes,
-				totalSizes,
+				units,
+				totalUnits,
 			})
 		);
 	}
@@ -157,9 +174,14 @@ export const allProducts = asyncHandler(
 		const limit = 5;
 		const skip = (page - 1) * limit;
 		const products = await Product.find()
-			.populate("category", "name")
-			.populate("color", "name value")
-			.populate("size", "name value")
+			.populate({
+				path: "category",
+				populate: {
+					path: "parentCategory",
+				},
+			})
+			.populate("color")
+			.populate("unit")
 			.limit(limit)
 			.skip(skip);
 		const totalProducts = await Product.countDocuments();
@@ -194,13 +216,13 @@ export const createProduct = asyncHandler(
 	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
 		const {
 			title,
-			description,
 			price,
 			stock,
+			childCategoryId,
+			colorId,
+			unitId,
 			discount,
-			category,
-			color,
-			size,
+			description,
 			featured,
 		} = req.body;
 		const images = req.files as Express.Multer.File[];
@@ -222,39 +244,56 @@ export const createProduct = asyncHandler(
 		}
 		const product = new Product({
 			title,
-			price,
 			description,
-			category,
+			price,
+			category: childCategoryId,
+			color: colorId ? colorId : null,
+			discount: discount ? discount : 0,
+			unit: unitId ? unitId : null,
 			stock,
-			discount,
+			featured: req.body.featured === "on" ? true : false,
 			images: imagesLinks,
-			color,
-			size,
-			featured: featured === "on" ? true : false,
 		});
 		await product.save();
-		return res
-			.status(201)
-			.json(new ApiResponse(200, {}, "Created new product successfully"));
-	}
-);
-
-// POST Create Size
-export const createSize = asyncHandler(
-	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-		const { name, value } = req.body;
-		if (!name || !value) {
-			return next(new ApiError(402, "Please enter valid inputs"));
-		}
-		const size = new Size({
-			name,
-			value,
-		});
-		await size.save();
+		const newProduct = await Product.findById(product._id)
+			.populate({
+				path: "category",
+				populate: {
+					path: "parentCategory",
+				},
+			})
+			.populate("color")
+			.populate("unit");
+		const totalProducts = await Product.countDocuments();
 		return res
 			.status(201)
 			.json(
-				new ApiResponse(200, { size }, "Created new size successfully")
+				new ApiResponse(
+					200,
+					{ product: newProduct, totalProducts },
+					"Created new product successfully"
+				)
+			);
+	}
+);
+
+// POST Create Unit
+export const createUnit = asyncHandler(
+	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+		const { name, value, shortHand } = req.body;
+		if (!name || !value) {
+			return next(new ApiError(402, "Please enter valid inputs"));
+		}
+		const unit = new Unit({
+			name,
+			value,
+			shortHand: shortHand ? shortHand : null,
+		});
+		await unit.save();
+		return res
+			.status(201)
+			.json(
+				new ApiResponse(200, { unit }, "Created new unit successfully")
 			);
 	}
 );
@@ -283,23 +322,53 @@ export const createColor = asyncHandler(
 	}
 );
 
-// POST Create Category
-export const createCategory = asyncHandler(
+// POST Create Child Category
+export const createChildCategory = asyncHandler(
+	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+		const { parentCategoryId, name } = req.body;
+		console.log(req.body);
+		if (!parentCategoryId || !name) {
+			return next(new ApiError(402, "Please enter valid inputs"));
+		}
+		const childCategory = new ChildCategory({
+			parentCategory: parentCategoryId,
+			name,
+		});
+		await childCategory.save();
+		const newChildCategory = await ChildCategory.findById(
+			childCategory._id
+		).populate("parentCategory", "name");
+		return res
+			.status(201)
+			.json(
+				new ApiResponse(
+					200,
+					{ childCategory: newChildCategory },
+					"Created new child category successfully"
+				)
+			);
+	}
+);
+
+// POST Create Parent Category
+export const createParentCategory = asyncHandler(
 	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
 		const { name } = req.body;
 		console.log(req.body);
 		if (!name) {
 			return next(new ApiError(402, "Please enter valid inputs"));
 		}
-		const category = new Category({ name });
-		await category.save();
+		const parentCategory = new ParentCategory({
+			name,
+		});
+		await parentCategory.save();
 		return res
 			.status(201)
 			.json(
 				new ApiResponse(
 					200,
-					{ category },
-					"Created new category successfully"
+					{ parentCategory },
+					"Created new parent category successfully"
 				)
 			);
 	}
@@ -367,28 +436,24 @@ export const updateProduct = asyncHandler(
 			price,
 			stock,
 			discount,
-			category,
-			color,
-			size,
+			childCategoryId,
+			colorId,
+			unitId,
 			featured,
-			prevImagesLen,
 		} = req.body;
+		console.log(req.body, req.file);
 		const images = req.files as Express.Multer.File[];
-		console.log(req.body);
-		console.log(req.files);
 		const product = await Product.findById(id);
 		const prevImages = product?.images;
-		console.log(product);
-		console.log(prevImages);
 		if (!product) {
 			return next(
 				new ApiError(500, `No product found with this id:${id}`)
 			);
 		}
-		if (Number(prevImagesLen) === 0 && images.length === 0) {
+		if (product.images.length === 0 && images.length === 0) {
 			return next(new ApiError(400, "Atleast 1 image is required"));
 		}
-		if (Number(prevImagesLen) + images.length > 4) {
+		if (product.images.length + images.length > 4) {
 			return next(new ApiError(400, "Atmost 4 image only"));
 		}
 		const imagesLinks: ImageType[] = [];
@@ -415,11 +480,11 @@ export const updateProduct = asyncHandler(
 				title,
 				description,
 				price,
-				discount,
+				discount: discount ? discount : 0,
 				stock,
-				color,
-				size,
-				category,
+				color: colorId ? colorId : null,
+				unit: unitId ? unitId : null,
+				category: childCategoryId ? childCategoryId : null,
 				featured: featured === "on" ? true : false,
 				images: imagesLinks,
 			},
@@ -427,36 +492,75 @@ export const updateProduct = asyncHandler(
 				new: true,
 			}
 		)
-			.populate("category", "name")
-			.populate("color", "name value")
-			.populate("size", "name value");
+			.populate({
+				path: "category",
+				populate: {
+					path: "parentCategory",
+				},
+			})
+			.populate("color")
+			.populate("unit");
+		const totalProducts = await Product.countDocuments();
 		return res
 			.status(200)
 			.json(
 				new ApiResponse(
 					200,
-					{ product: updatedProduct },
+					{ product: updatedProduct, totalProducts },
 					"Product updated successfully."
 				)
 			);
 	}
 );
 
-// UPDATE Category
-export const updateCategory = asyncHandler(
+// UPDATE Child Category
+export const updateChildCategory = asyncHandler(
+	async (req: Request, res: Response, next: NextFunction) => {
+		const { id } = req.params;
+		const { name, parentCategoryId } = req.body;
+		if (!name || !parentCategoryId) {
+			return next(new ApiError(402, "Please enter valid inputs"));
+		}
+		const childCategory = await ChildCategory.findById(id);
+		if (!childCategory) {
+			return next(
+				new ApiError(500, `No child category found with this id:${id}`)
+			);
+		}
+		const updatedChildCategory = await ChildCategory.findByIdAndUpdate(
+			id,
+			{ name, parentCategory: parentCategoryId },
+			{
+				new: true,
+			}
+		).populate("parentCategory", "name");
+		return res
+			.status(200)
+			.json(
+				new ApiResponse(
+					200,
+					{ childCategory: updatedChildCategory },
+					"Child category updated successfully."
+				)
+			);
+	}
+);
+
+// UPDATE Parent Category
+export const updateParentCategory = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
 		const { id } = req.params;
 		const { name } = req.body;
 		if (!name) {
 			return next(new ApiError(402, "Please enter valid inputs"));
 		}
-		const category = await Category.findById(id);
-		if (!category) {
+		const parentCategory = await ParentCategory.findById(id);
+		if (!parentCategory) {
 			return next(
-				new ApiError(500, `No category found with this id:${id}`)
+				new ApiError(500, `No parent category found with this id:${id}`)
 			);
 		}
-		const updatedCategory = await Category.findByIdAndUpdate(
+		const updatedParentCategory = await ParentCategory.findByIdAndUpdate(
 			id,
 			{ name },
 			{
@@ -468,8 +572,8 @@ export const updateCategory = asyncHandler(
 			.json(
 				new ApiResponse(
 					200,
-					{ category: updatedCategory },
-					"Category updated successfully."
+					{ category: updatedParentCategory },
+					"Parent category updated successfully."
 				)
 			);
 	}
@@ -506,21 +610,21 @@ export const updateColor = asyncHandler(
 	}
 );
 
-// UPDATE Size
-export const updateSize = asyncHandler(
+// UPDATE Unit
+export const updateUnit = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
 		const { id } = req.params;
-		const { name, value } = req.body;
+		const { name, value, shortHand } = req.body;
 		if (!name || !value) {
 			return next(new ApiError(402, "Please enter valid inputs"));
 		}
-		const size = await Size.findById(id);
-		if (!size) {
-			return next(new ApiError(500, `No size found with this id:${id}`));
+		const unit = await Unit.findById(id);
+		if (!unit) {
+			return next(new ApiError(500, `No unit found with this id:${id}`));
 		}
-		const updatedSize = await Size.findByIdAndUpdate(
+		const updatedUnit = await Unit.findByIdAndUpdate(
 			id,
-			{ name, value },
+			{ name, value, shortHand: shortHand ? shortHand : null },
 			{
 				new: true,
 			}
@@ -530,8 +634,8 @@ export const updateSize = asyncHandler(
 			.json(
 				new ApiResponse(
 					200,
-					{ size: updatedSize },
-					"Size updated successfully."
+					{ unit: updatedUnit },
+					"Unit updated successfully."
 				)
 			);
 	}
@@ -615,20 +719,45 @@ export const deleteProduct = asyncHandler(
 	}
 );
 
-// POST Delete Category
-export const deleteCategory = asyncHandler(
+// POST Delete Child Category
+export const deleteChildCategory = asyncHandler(
 	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
 		const { id } = req.params;
-		const category = await Category.findById(id);
-		if (!category) {
+		const childCategory = await ChildCategory.findById(id);
+		if (!childCategory) {
 			return next(
-				new ApiError(500, `No category found with this id:${id}`)
+				new ApiError(500, `No child category found with this id:${id}`)
 			);
 		}
-		await category.deleteOne();
+		await childCategory.deleteOne();
 		return res
 			.status(200)
-			.json(new ApiResponse(200, {}, "Category deleted successfully!"));
+			.json(
+				new ApiResponse(200, {}, "Child category deleted successfully!")
+			);
+	}
+);
+
+// POST Delete Parent Category
+export const deleteParentCategory = asyncHandler(
+	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+		const { id } = req.params;
+		const parentCategory = await ParentCategory.findById(id);
+		if (!parentCategory) {
+			return next(
+				new ApiError(500, `No parent category found with this id:${id}`)
+			);
+		}
+		await parentCategory.deleteOne();
+		return res
+			.status(200)
+			.json(
+				new ApiResponse(
+					200,
+					{},
+					"Parent category deleted successfully!"
+				)
+			);
 	}
 );
 
@@ -647,18 +776,18 @@ export const deleteColor = asyncHandler(
 	}
 );
 
-// POST Delete Size
-export const deleteSize = asyncHandler(
+// POST Delete Unit
+export const deleteUnit = asyncHandler(
 	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
 		const { id } = req.params;
-		const size = await Size.findById(id);
-		if (!size) {
-			return next(new ApiError(500, `No size found with this id:${id}`));
+		const unit = await Unit.findById(id);
+		if (!unit) {
+			return next(new ApiError(500, `No unit found with this id:${id}`));
 		}
-		await size.deleteOne();
+		await unit.deleteOne();
 		return res
 			.status(200)
-			.json(new ApiResponse(200, {}, "Size deleted successfully!"));
+			.json(new ApiResponse(200, {}, "Unit deleted successfully!"));
 	}
 );
 

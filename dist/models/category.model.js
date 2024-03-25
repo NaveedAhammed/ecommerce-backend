@@ -1,9 +1,11 @@
 import { Schema, model } from "mongoose";
 const categorySchema = new Schema({
-    name: {
-        unique: true,
+    parentCategory: {
         type: String,
         required: [true, "Category name is required"],
+    },
+    childCategory: {
+        type: String,
     },
 }, { timestamps: true });
 const Category = model("Category", categorySchema);

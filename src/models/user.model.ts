@@ -18,6 +18,7 @@ export interface IUser {
 	resetPasswordToken?: string;
 	resetPasswordExpire?: Date;
 	refreshToken: string;
+	wishlistIds: Types.ObjectId[];
 	isPasswordCorrect(password: string): Promise<boolean>;
 	generateAccessToken(): string;
 	generateRefreshToken(): string;
@@ -117,6 +118,12 @@ const userSchema = new Schema<IUser>(
 					required: [true, "Product id is required"],
 					ref: "Product",
 				},
+			},
+		],
+		wishlistIds: [
+			{
+				type: Types.ObjectId,
+				ref: "Product",
 			},
 		],
 		refreshToken: {

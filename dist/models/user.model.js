@@ -82,6 +82,12 @@ const userSchema = new Schema({
             },
         },
     ],
+    wishlistIds: [
+        {
+            type: Types.ObjectId,
+            ref: "Product",
+        },
+    ],
     refreshToken: {
         type: String,
     },

@@ -1,11 +1,12 @@
 import { Router } from "express";
 import {
-  loginUser,
-  myProfile,
-  refresh,
-  registerUser,
-  updateMyProfile,
-  uploadProfilePicture,
+	addorRemoveWishlistId,
+	loginUser,
+	myProfile,
+	refresh,
+	registerUser,
+	updateMyProfile,
+	uploadProfilePicture,
 } from "../controllers/user.controller.js";
 import { isAuth } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -23,10 +24,12 @@ router.route("/refresh").get(refresh);
 router.route("/register").post(registerUser);
 // POST login user
 router.route("/login").post(loginUser);
+// POST add or remove wishlist
+router.route("/user/wishlist/:productId").post(isAuth, addorRemoveWishlistId);
 // POST upload profile picture
 router
-  .route("/myProfile")
-  .post(isAuth, upload.single("avatar"), uploadProfilePicture);
+	.route("/myProfile")
+	.post(isAuth, upload.single("avatar"), uploadProfilePicture);
 
 // <---------- PUT REQUEST ---------->
 // PUT my profile

@@ -1,7 +1,7 @@
 import { Schema, Types, model } from "mongoose";
 import { IChildCategory } from "./childCategory.model.js";
 
-interface IProduct {
+export interface IProduct {
 	title: string;
 	description: string;
 	price: number;

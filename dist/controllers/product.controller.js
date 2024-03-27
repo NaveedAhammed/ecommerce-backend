@@ -3,11 +3,12 @@ import Product from "../models/product.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import Billboard from "../models/billboards.model.js";
+import User from "../models/user.model.js";
 export const getAllproducts = asyncHandler(async (req, res, next) => {
     const page = Number(req.query.page) || 1;
     const limit = 10;
     const skip = (page - 1) * limit;
-    const featuredProducts = await Product.find({ featured: true })
+    const featuredProducts = await Product.find()
         .populate({
         path: "category",
         populate: {
@@ -27,9 +28,9 @@ export const getAllproducts = asyncHandler(async (req, res, next) => {
 // GET Featured Products
 export const featuredProducts = asyncHandler(async (req, res, next) => {
     const page = Number(req.query.page) || 1;
-    const limit = 10;
+    const limit = 20;
     const skip = (page - 1) * limit;
-    const featuredProducts = await Product.find()
+    const featuredProducts = await Product.find({ featured: true })
         .populate({
         path: "category",
         populate: {
@@ -44,6 +45,46 @@ export const featuredProducts = asyncHandler(async (req, res, next) => {
     return res.status(200).json(new ApiResponse(200, {
         featuredProducts,
         totalFeaturedProducts,
+    }));
+});
+// GET Featured Products
+export const similarProducts = asyncHandler(async (req, res, next) => {
+    const { categoryId } = req.params;
+    const page = Number(req.query.page) || 1;
+    const limit = 10;
+    const skip = (page - 1) * limit;
+    const similarProducts = await Product.find({ category: categoryId })
+        .populate({
+        path: "category",
+        populate: {
+            path: "parentCategory",
+        },
+    })
+        .populate("color")
+        .populate("unit")
+        .limit(limit)
+        .skip(skip);
+    const totalSimilarProducts = await Product.countDocuments();
+    return res.status(200).json(new ApiResponse(200, {
+        similarProducts,
+        totalSimilarProducts,
+    }));
+});
+// GET Wishlist Products
+export const wishlistProducts = asyncHandler(async (req, res, next) => {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+        return next(new ApiError(404, "User not found!"));
+    }
+    await user.populate({
+        path: "wishlistIds",
+        populate: {
+            path: "category unit color",
+        },
+    });
+    return res.status(200).json(new ApiResponse(200, {
+        wishlistProducts: user.wishlistIds,
+        totalWishlistProducts: user.wishlistIds.length,
     }));
 });
 // GET Active Billboard

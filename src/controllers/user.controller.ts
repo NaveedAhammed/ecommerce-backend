@@ -9,6 +9,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { IGetUserAuthInfoRequest } from "../types/request.js";
 import { sendEmail } from "../utils/sendEmail.js";
+import { Types } from "mongoose";
 
 // POST Register User
 export const registerUser = asyncHandler(
@@ -54,6 +55,7 @@ export const registerUser = asyncHandler(
 							id: user._id,
 							username: user.username,
 							avatar: user.avatar,
+							wishlisdIds: user.wishlistIds,
 						},
 						accessToken,
 					},
@@ -100,6 +102,7 @@ export const loginUser = asyncHandler(
 							id: user._id,
 							username: user.username,
 							avatar: user.avatar,
+							wishlistIds: user.wishlistIds,
 						},
 						accessToken,
 					},
@@ -308,17 +311,50 @@ export const refresh = asyncHandler(
 					process.env.ACCESS_TOKEN_SECRET as string,
 					{ expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
 				);
+				console.log(user);
 				return res.status(200).json(
 					new ApiResponse(200, {
 						user: {
 							username: user.username,
 							avatar: user?.avatar,
 							id: user._id,
+							wishlistIds: user?.wishlistIds,
 						},
 						accessToken,
 					})
 				);
 			}
 		);
+	}
+);
+
+// POST Add or Remove Wishlist Id
+export const addorRemoveWishlistId = asyncHandler(
+	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+		const { productId } = req.params;
+		const user = await User.findById(req.user._id);
+		if (!user) {
+			return next(new ApiError(404, "User not found!"));
+		}
+		const isExistingItem = user.wishlistIds.findIndex(
+			(item) => item.toString() === productId
+		);
+		if (isExistingItem !== -1) {
+			user.wishlistIds.splice(isExistingItem, 1);
+		} else {
+			user.wishlistIds.push(new Types.ObjectId(productId));
+		}
+		await user.save({ validateBeforeSave: false });
+		return res
+			.status(200)
+			.json(
+				new ApiResponse(
+					200,
+					{},
+					`Product ${
+						isExistingItem !== -1 ? "removed from" : "added to"
+					} wishlist`
+				)
+			);
 	}
 );

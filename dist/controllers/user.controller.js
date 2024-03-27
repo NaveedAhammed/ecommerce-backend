@@ -6,6 +6,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { sendEmail } from "../utils/sendEmail.js";
+import { Types } from "mongoose";
 // POST Register User
 export const registerUser = asyncHandler(async (req, res, next) => {
     const { username, email, password } = req.body;
@@ -40,6 +41,7 @@ export const registerUser = asyncHandler(async (req, res, next) => {
             id: user._id,
             username: user.username,
             avatar: user.avatar,
+            wishlisdIds: user.wishlistIds,
         },
         accessToken,
     }, "Registered successfully"));
@@ -77,6 +79,7 @@ export const loginUser = asyncHandler(async (req, res, next) => {
             id: user._id,
             username: user.username,
             avatar: user.avatar,
+            wishlistIds: user.wishlistIds,
         },
         accessToken,
     }, "Logged in successfully"));
@@ -222,13 +225,34 @@ export const refresh = asyncHandler(async (req, res, next) => {
             return next(new ApiError(401, "Refresh token has been expired"));
         }
         const accessToken = jwt.sign({ id: user._id, username: decoded.username }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRY });
+        console.log(user);
         return res.status(200).json(new ApiResponse(200, {
             user: {
                 username: user.username,
                 avatar: user?.avatar,
                 id: user._id,
+                wishlistIds: user?.wishlistIds,
             },
             accessToken,
         }));
     });
+});
+// POST Add or Remove Wishlist Id
+export const addorRemoveWishlistId = asyncHandler(async (req, res, next) => {
+    const { productId } = req.params;
+    const user = await User.findById(req.user._id);
+    if (!user) {
+        return next(new ApiError(404, "User not found!"));
+    }
+    const isExistingItem = user.wishlistIds.findIndex((item) => item.toString() === productId);
+    if (isExistingItem !== -1) {
+        user.wishlistIds.splice(isExistingItem, 1);
+    }
+    else {
+        user.wishlistIds.push(new Types.ObjectId(productId));
+    }
+    await user.save({ validateBeforeSave: false });
+    return res
+        .status(200)
+        .json(new ApiResponse(200, {}, `Product ${isExistingItem !== -1 ? "removed from" : "added to"} wishlist`));
 });

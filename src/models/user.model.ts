@@ -14,11 +14,12 @@ export interface IUser {
 	phone?: number;
 	avatar?: string;
 	role: string;
-	cart?: ICartItem[];
+	cart: ICartItem[];
 	resetPasswordToken?: string;
 	resetPasswordExpire?: Date;
 	refreshToken: string;
 	wishlistIds: Types.ObjectId[];
+	shippingAddresses: IShippingInfo[];
 	isPasswordCorrect(password: string): Promise<boolean>;
 	generateAccessToken(): string;
 	generateRefreshToken(): string;
@@ -27,11 +28,20 @@ export interface IUser {
 	removeItemFromCart: (productId: string) => void;
 }
 
+interface IShippingInfo {
+	_id?: string;
+	name: string;
+	locality: string;
+	address: string;
+	city: string;
+	state: string;
+	pincode: number;
+	phone: number;
+	alternatePhone?: number;
+	addressType: string;
+}
+
 interface ICartItem {
-	image: string;
-	title: string;
-	price: number;
-	discount?: number;
 	quantity: number;
 	productId: Types.ObjectId;
 }
@@ -93,22 +103,6 @@ const userSchema = new Schema<IUser>(
 		},
 		cart: [
 			{
-				image: {
-					type: String,
-					required: [true, "Image is required"],
-				},
-				title: {
-					type: String,
-					required: [true, "Title is required"],
-				},
-				price: {
-					type: Number,
-					required: [true, "Price is required"],
-				},
-				discount: {
-					type: Number,
-					default: 0,
-				},
 				quantity: {
 					type: Number,
 					required: [true, "Quantity is required"],
@@ -124,6 +118,52 @@ const userSchema = new Schema<IUser>(
 			{
 				type: Types.ObjectId,
 				ref: "Product",
+			},
+		],
+		shippingAddresses: [
+			{
+				name: {
+					type: String,
+					required: [true, "Name is required"],
+				},
+				phone: {
+					type: Number,
+					required: [true, "Name is required"],
+					validate: {
+						validator: function (value: string) {
+							return /^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}$/.test(
+								value
+							);
+						},
+						message: (props: mongoose.ValidatorProps) =>
+							`${props.value} is not a valid phone number`,
+					},
+				},
+				locality: {
+					type: String,
+					required: [true, "Locality is required"],
+				},
+				city: {
+					type: String,
+					required: [true, "City is required"],
+				},
+				state: {
+					type: String,
+					required: [true, "State is required"],
+				},
+				address: {
+					type: String,
+					required: [true, "Address is required"],
+				},
+				addressType: {
+					type: String,
+					required: [true, "Address type is required"],
+				},
+				pincode: {
+					type: Number,
+					required: [true, "Pincode is required"],
+				},
+				alternatePhone: Number,
 			},
 		],
 		refreshToken: {

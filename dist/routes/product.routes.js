@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { activeBillboard, createOrUpdateReview, deleteReview, featuredProducts, getAllproducts, productDetails, productReviews, similarProducts, wishlistProducts, } from "../controllers/product.controller.js";
+import { activeBillboard, cartProducts, createOrUpdateReview, deleteReview, featuredProducts, getAllproducts, productDetails, productReviews, similarProducts, wishlistProducts, } from "../controllers/product.controller.js";
 import { isAuth } from "../middlewares/auth.middleware.js";
 const router = Router();
 // <---------- GET REQUEST ---------->
@@ -10,6 +10,8 @@ router.route("/products/featured").get(featuredProducts);
 router.route("/products/similar/:categoryId").get(similarProducts);
 // GET wishlist products
 router.route("/products/wishlist").get(isAuth, wishlistProducts);
+// GET cart products
+router.route("/products/cart").get(isAuth, cartProducts);
 // GET product details
 router.route("/products/:id").get(productDetails);
 // GET product reviews

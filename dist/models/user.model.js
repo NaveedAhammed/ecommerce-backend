@@ -55,22 +55,6 @@ const userSchema = new Schema({
     },
     cart: [
         {
-            image: {
-                type: String,
-                required: [true, "Image is required"],
-            },
-            title: {
-                type: String,
-                required: [true, "Title is required"],
-            },
-            price: {
-                type: Number,
-                required: [true, "Price is required"],
-            },
-            discount: {
-                type: Number,
-                default: 0,
-            },
             quantity: {
                 type: Number,
                 required: [true, "Quantity is required"],
@@ -86,6 +70,49 @@ const userSchema = new Schema({
         {
             type: Types.ObjectId,
             ref: "Product",
+        },
+    ],
+    shippingAddresses: [
+        {
+            name: {
+                type: String,
+                required: [true, "Name is required"],
+            },
+            phone: {
+                type: Number,
+                required: [true, "Name is required"],
+                validate: {
+                    validator: function (value) {
+                        return /^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}$/.test(value);
+                    },
+                    message: (props) => `${props.value} is not a valid phone number`,
+                },
+            },
+            locality: {
+                type: String,
+                required: [true, "Locality is required"],
+            },
+            city: {
+                type: String,
+                required: [true, "City is required"],
+            },
+            state: {
+                type: String,
+                required: [true, "State is required"],
+            },
+            address: {
+                type: String,
+                required: [true, "Address is required"],
+            },
+            addressType: {
+                type: String,
+                required: [true, "Address type is required"],
+            },
+            pincode: {
+                type: Number,
+                required: [true, "Pincode is required"],
+            },
+            alternatePhone: Number,
         },
     ],
     refreshToken: {

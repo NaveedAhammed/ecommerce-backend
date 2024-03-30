@@ -10,6 +10,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { IGetUserAuthInfoRequest } from "../types/request.js";
 import { sendEmail } from "../utils/sendEmail.js";
 import { Types } from "mongoose";
+import { ObjectId } from "mongodb";
 
 // POST Register User
 export const registerUser = asyncHandler(
@@ -54,8 +55,12 @@ export const registerUser = asyncHandler(
 						user: {
 							id: user._id,
 							username: user.username,
+							email: user.email,
+							phone: user?.phone,
 							avatar: user.avatar,
 							wishlisdIds: user.wishlistIds,
+							gender: user?.gender,
+							cart: user?.cart,
 						},
 						accessToken,
 					},
@@ -101,14 +106,143 @@ export const loginUser = asyncHandler(
 						user: {
 							id: user._id,
 							username: user.username,
+							email: user.email,
+							phone: user?.phone,
 							avatar: user.avatar,
 							wishlistIds: user.wishlistIds,
+							gender: user?.gender,
+							cart: user?.cart,
 						},
 						accessToken,
 					},
 					"Logged in successfully"
 				)
 			);
+	}
+);
+
+// POST Add Shipping Address
+export const addShippingAddress = asyncHandler(
+	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+		const {
+			name,
+			phone,
+			pincode,
+			locality,
+			city,
+			state,
+			address,
+			alternatePhone,
+			addressType,
+		} = req.body;
+		const user = await User.findById(req.user._id);
+		if (!user) {
+			return next(new ApiError(404, "User does not exist"));
+		}
+		user.shippingAddresses.push({
+			name,
+			phone,
+			locality,
+			city,
+			state,
+			address,
+			pincode,
+			alternatePhone: alternatePhone ? alternatePhone : null,
+			addressType,
+		});
+		await user.save({ validateBeforeSave: false });
+		return res.status(200).json(
+			new ApiResponse(
+				200,
+				{
+					user: {
+						shippingAddresses: user.shippingAddresses,
+					},
+				},
+				"New address added successfully"
+			)
+		);
+	}
+);
+
+// PUT Update Shipping Address
+export const updateShippingAddress = asyncHandler(
+	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+		const { id } = req.params;
+		const {
+			name,
+			phone,
+			pincode,
+			locality,
+			city,
+			state,
+			address,
+			alternatePhone,
+			addressType,
+		} = req.body;
+		const user = await User.findById(req.user._id);
+		if (!user) {
+			return next(new ApiError(404, "User does not exist"));
+		}
+		const index = user.shippingAddresses.findIndex(
+			(item) => item._id?.toString() === id
+		);
+		if (index !== -1) {
+			user.shippingAddresses[index] = {
+				address,
+				addressType,
+				city,
+				locality,
+				name,
+				phone,
+				pincode,
+				state,
+				alternatePhone: alternatePhone ? alternatePhone : null,
+			};
+		} else {
+			return next(new ApiError(404, "Address not found"));
+		}
+		await user.save({ validateBeforeSave: false });
+		return res.status(200).json(
+			new ApiResponse(
+				200,
+				{
+					user: {
+						shippingAddresses: user?.shippingAddresses,
+					},
+				},
+				"Address updated added successfully"
+			)
+		);
+	}
+);
+
+// DELETE Shipping Address
+export const deleteShippingAddress = asyncHandler(
+	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+		const { id } = req.params;
+		const user = await User.findOneAndUpdate(
+			{ _id: req.user._id },
+			{
+				$pull: {
+					shippingAddresses: {
+						_id: id,
+					},
+				},
+			},
+			{ new: true }
+		);
+		return res.status(200).json(
+			new ApiResponse(
+				200,
+				{
+					user: {
+						shippingAddresses: user?.shippingAddresses,
+					},
+				},
+				"Address deleted successfully"
+			)
+		);
 	}
 );
 
@@ -232,9 +366,19 @@ export const myProfile = asyncHandler(
 // POST Update My Profile
 export const updateMyProfile = asyncHandler(
 	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-		const user = await User.findByIdAndUpdate(req.user._id, req.body, {
-			new: true,
-		});
+		const { username, email, phone, gender } = req.body;
+		const user = await User.findByIdAndUpdate(
+			req.user._id,
+			{
+				username: username,
+				email: email,
+				phone: phone ? phone : null,
+				gender: gender ? gender : null,
+			},
+			{
+				new: true,
+			}
+		);
 		if (!user) {
 			return next(new ApiError(404, "User not found!"));
 		}
@@ -242,42 +386,43 @@ export const updateMyProfile = asyncHandler(
 			new ApiResponse(200, {
 				user: {
 					username: user.username,
-					avatar: user?.avatar,
 					email: user.email,
 					phone: user?.phone,
+					gender: user?.gender,
 				},
 			})
 		);
 	}
 );
 
-// POST Upload Profile Picture
-export const uploadProfilePicture = asyncHandler(
+// PUT Update Profile Picture
+export const updateProfilePicture = asyncHandler(
 	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-		console.log(JSON.parse(req.body));
-		const avatarLocalPath = req.body.avatar;
-		if (!avatarLocalPath) {
+		const avatar = req?.file;
+		console.log(avatar);
+		if (!avatar) {
 			return next(new ApiError(400, "Avatar file is missing"));
 		}
-		const avatar = await uploadOnCloudinary(avatarLocalPath);
+		const result = await uploadOnCloudinary(avatar.path);
 		const user = await User.findByIdAndUpdate(
 			req.user?._id,
 			{
 				$set: {
-					avatar: avatar?.url,
+					avatar: result?.url,
 				},
 			},
 			{ new: true }
 		).select("-password -refreshToken");
 		res.status(200).json(
-			new ApiResponse(200, {
-				user: {
-					username: user?.username,
-					avatar: user?.avatar,
-					email: user?.email,
-					phone: user?.phone,
+			new ApiResponse(
+				200,
+				{
+					user: {
+						avatar: user?.avatar,
+					},
 				},
-			})
+				""
+			)
 		);
 	}
 );
@@ -319,6 +464,11 @@ export const refresh = asyncHandler(
 							avatar: user?.avatar,
 							id: user._id,
 							wishlistIds: user?.wishlistIds,
+							email: user?.email,
+							phone: user?.phone,
+							gender: user?.gender,
+							cart: user?.cart,
+							shippingAddresses: user?.shippingAddresses,
 						},
 						accessToken,
 					})
@@ -345,16 +495,134 @@ export const addorRemoveWishlistId = asyncHandler(
 			user.wishlistIds.push(new Types.ObjectId(productId));
 		}
 		await user.save({ validateBeforeSave: false });
-		return res
-			.status(200)
-			.json(
-				new ApiResponse(
-					200,
-					{},
-					`Product ${
-						isExistingItem !== -1 ? "removed from" : "added to"
-					} wishlist`
-				)
+		return res.status(200).json(
+			new ApiResponse(
+				200,
+				{
+					user: {
+						wishlistIds: user?.wishlistIds,
+					},
+				},
+				`Product ${
+					isExistingItem !== -1 ? "removed from" : "added to"
+				} wishlist`
+			)
+		);
+	}
+);
+
+// POST Toggle Cart Item Quantity
+export const toggleCartItemQuantity = asyncHandler(
+	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+		const { productId } = req.params;
+		const { quantity } = req.body;
+		console.log(productId, quantity);
+		const user = await User.findById(req.user._id);
+		if (!user) {
+			return next(new ApiError(404, "User not found!"));
+		}
+		const isExistingItem = user.cart.findIndex(
+			(item) => item.productId.toString() === productId
+		);
+		if (Number(quantity) < 0 || Number(quantity) > 6) {
+			return next(new ApiError(401, "Please enter a valid quantity"));
+		}
+		if (isExistingItem !== -1) {
+			user.cart[isExistingItem].quantity = Number(quantity);
+		} else {
+			user.cart.push({
+				productId: new ObjectId(productId),
+				quantity: Number(quantity),
+			});
+		}
+		await user.save({ validateBeforeSave: false });
+		return res.status(200).json(
+			new ApiResponse(
+				200,
+				{
+					user: {
+						cart: user?.cart,
+					},
+				},
+				`${
+					isExistingItem === -1
+						? "Item added to cart"
+						: `You changed the quantity to ${quantity}`
+				}`
+			)
+		);
+	}
+);
+
+// POST Add To Cart
+export const addToCart = asyncHandler(
+	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+		const { productId } = req.params;
+		const { quantity } = req.body;
+		const user = await User.findById(req.user._id);
+		if (!user) {
+			return next(new ApiError(404, "User not found!"));
+		}
+		const isExistingItem = user.cart.findIndex(
+			(item) => item.productId.toString() === productId
+		);
+		if (Number(quantity) < 0 || Number(quantity) > 6) {
+			return next(new ApiError(401, "Please enter a valid quantity"));
+		}
+		if (user.cart[isExistingItem]?.quantity + Number(quantity) > 6) {
+			return next(
+				new ApiError(401, "You cannot add more than 6 to cart")
 			);
+		}
+		if (isExistingItem !== -1) {
+			user.cart[isExistingItem].quantity += Number(quantity);
+		} else {
+			user.cart.push({
+				productId: new ObjectId(productId),
+				quantity: Number(quantity),
+			});
+		}
+		await user.save({ validateBeforeSave: false });
+		return res.status(200).json(
+			new ApiResponse(
+				200,
+				{
+					user: {
+						cart: user?.cart,
+					},
+				},
+				"Added to cart successfully"
+			)
+		);
+	}
+);
+
+// DELETE Toggle Cart Item Quantity
+export const deleteCartItem = asyncHandler(
+	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+		const { productId } = req.params;
+		const user = await User.findById(req.user._id);
+		if (!user) {
+			return next(new ApiError(404, "User not found!"));
+		}
+		const isExistingItem = user.cart.findIndex(
+			(item) => item.productId.toString() === productId
+		);
+		console.log(isExistingItem);
+		if (isExistingItem !== -1) {
+			user.cart.splice(isExistingItem, 1);
+		}
+		await user.save({ validateBeforeSave: false });
+		return res.status(200).json(
+			new ApiResponse(
+				200,
+				{
+					user: {
+						cart: user?.cart,
+					},
+				},
+				"Item removed successfully"
+			)
+		);
 	}
 );

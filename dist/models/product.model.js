@@ -8,6 +8,10 @@ const productSchema = new Schema({
         type: String,
         required: [true, "Product description is required"],
     },
+    brand: {
+        type: String,
+        required: [true, "Brand is required"],
+    },
     price: {
         type: Number,
         required: [true, "Product price is required"],

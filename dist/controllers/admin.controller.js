@@ -153,7 +153,7 @@ export const singleUser = asyncHandler(async (req, res, next) => {
 });
 // POST Create Product
 export const createProduct = asyncHandler(async (req, res, next) => {
-    const { title, price, stock, childCategoryId, colorId, unitId, discount, description, featured, } = req.body;
+    const { title, price, brand, stock, childCategoryId, colorId, unitId, discount, description, featured, } = req.body;
     const images = req.files;
     if (images.length === 0) {
         return next(new ApiError(400, "Atleast 1 image is required"));
@@ -173,6 +173,7 @@ export const createProduct = asyncHandler(async (req, res, next) => {
     const product = new Product({
         title,
         description,
+        brand,
         price,
         category: childCategoryId,
         color: colorId ? colorId : null,
@@ -299,7 +300,7 @@ export const updateUserRole = asyncHandler(async (req, res, next) => {
 // UPDATE Product
 export const updateProduct = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
-    const { title, description, price, stock, discount, childCategoryId, colorId, unitId, featured, } = req.body;
+    const { title, description, price, brand, stock, discount, childCategoryId, colorId, unitId, featured, } = req.body;
     console.log(req.body, req.file);
     const images = req.files;
     const product = await Product.findById(id);
@@ -335,6 +336,7 @@ export const updateProduct = asyncHandler(async (req, res, next) => {
         title,
         description,
         price,
+        brand,
         discount: discount ? discount : 0,
         stock,
         color: colorId ? colorId : null,

@@ -4,6 +4,7 @@ import { IChildCategory } from "./childCategory.model.js";
 export interface IProduct {
 	title: string;
 	description: string;
+	brand: string;
 	price: number;
 	stock: number;
 	discount?: number;
@@ -36,6 +37,10 @@ const productSchema = new Schema<IProduct>(
 		description: {
 			type: String,
 			required: [true, "Product description is required"],
+		},
+		brand: {
+			type: String,
+			required: [true, "Brand is required"],
 		},
 		price: {
 			type: Number,

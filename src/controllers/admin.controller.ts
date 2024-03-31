@@ -217,6 +217,7 @@ export const createProduct = asyncHandler(
 		const {
 			title,
 			price,
+			brand,
 			stock,
 			childCategoryId,
 			colorId,
@@ -245,6 +246,7 @@ export const createProduct = asyncHandler(
 		const product = new Product({
 			title,
 			description,
+			brand,
 			price,
 			category: childCategoryId,
 			color: colorId ? colorId : null,
@@ -434,6 +436,7 @@ export const updateProduct = asyncHandler(
 			title,
 			description,
 			price,
+			brand,
 			stock,
 			discount,
 			childCategoryId,
@@ -480,6 +483,7 @@ export const updateProduct = asyncHandler(
 				title,
 				description,
 				price,
+				brand,
 				discount: discount ? discount : 0,
 				stock,
 				color: colorId ? colorId : null,

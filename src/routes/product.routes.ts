@@ -6,6 +6,7 @@ import {
 	deleteReview,
 	featuredProducts,
 	getAllproducts,
+	newArrivalProducts,
 	productDetails,
 	productReviews,
 	similarProducts,
@@ -19,6 +20,8 @@ const router: Router = Router();
 router.route("/products").get(getAllproducts);
 // GET featured products
 router.route("/products/featured").get(featuredProducts);
+// GET new arrivals products
+router.route("/products/newArrivals").get(newArrivalProducts);
 // GET similar product
 router.route("/products/similar/:categoryId").get(similarProducts);
 // GET wishlist products

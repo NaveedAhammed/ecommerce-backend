@@ -275,7 +275,6 @@ export const updateMyProfile = asyncHandler(async (req, res, next) => {
 // PUT Update Profile Picture
 export const updateProfilePicture = asyncHandler(async (req, res, next) => {
     const avatar = req?.file;
-    console.log(avatar);
     if (!avatar) {
         return next(new ApiError(400, "Avatar file is missing"));
     }
@@ -306,11 +305,9 @@ export const refresh = asyncHandler(async (req, res, next) => {
     }
     jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
         if (err) {
-            console.log("Hello");
             return next(new ApiError(401, "Refresh token has been expired"));
         }
         const accessToken = jwt.sign({ id: user._id, username: decoded.username }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRY });
-        console.log(user);
         return res.status(200).json(new ApiResponse(200, {
             user: {
                 username: user.username,
@@ -352,7 +349,6 @@ export const addorRemoveWishlistId = asyncHandler(async (req, res, next) => {
 export const toggleCartItemQuantity = asyncHandler(async (req, res, next) => {
     const { productId } = req.params;
     const { quantity } = req.body;
-    console.log(productId, quantity);
     const user = await User.findById(req.user._id);
     if (!user) {
         return next(new ApiError(404, "User not found!"));
@@ -418,7 +414,6 @@ export const deleteCartItem = asyncHandler(async (req, res, next) => {
         return next(new ApiError(404, "User not found!"));
     }
     const isExistingItem = user.cart.findIndex((item) => item.productId.toString() === productId);
-    console.log(isExistingItem);
     if (isExistingItem !== -1) {
         user.cart.splice(isExistingItem, 1);
     }

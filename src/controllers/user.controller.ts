@@ -399,7 +399,6 @@ export const updateMyProfile = asyncHandler(
 export const updateProfilePicture = asyncHandler(
 	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
 		const avatar = req?.file;
-		console.log(avatar);
 		if (!avatar) {
 			return next(new ApiError(400, "Avatar file is missing"));
 		}
@@ -446,7 +445,6 @@ export const refresh = asyncHandler(
 			process.env.REFRESH_TOKEN_SECRET as string,
 			(err: any, decoded: any) => {
 				if (err) {
-					console.log("Hello");
 					return next(
 						new ApiError(401, "Refresh token has been expired")
 					);
@@ -456,7 +454,6 @@ export const refresh = asyncHandler(
 					process.env.ACCESS_TOKEN_SECRET as string,
 					{ expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
 				);
-				console.log(user);
 				return res.status(200).json(
 					new ApiResponse(200, {
 						user: {
@@ -516,7 +513,6 @@ export const toggleCartItemQuantity = asyncHandler(
 	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
 		const { productId } = req.params;
 		const { quantity } = req.body;
-		console.log(productId, quantity);
 		const user = await User.findById(req.user._id);
 		if (!user) {
 			return next(new ApiError(404, "User not found!"));
@@ -608,7 +604,6 @@ export const deleteCartItem = asyncHandler(
 		const isExistingItem = user.cart.findIndex(
 			(item) => item.productId.toString() === productId
 		);
-		console.log(isExistingItem);
 		if (isExistingItem !== -1) {
 			user.cart.splice(isExistingItem, 1);
 		}

@@ -7,13 +7,17 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { IGetUserAuthInfoRequest } from "../types/request.js";
 import Billboard from "../models/billboards.model.js";
 import User from "../models/user.model.js";
+import ParentCategory from "../models/parentCategory.model.js";
+import ChildCategory from "../models/childCategory.model.js";
+import Features from "../utils/Features.js";
 
+// GET All Products
 export const getAllproducts = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
 		const page = Number(req.query.page) || 1;
 		const limit = 10;
 		const skip = (page - 1) * limit;
-		const featuredProducts = await Product.find()
+		const products = await Product.find()
 			.populate({
 				path: "category",
 				populate: {
@@ -24,11 +28,45 @@ export const getAllproducts = asyncHandler(
 			.populate("unit")
 			.limit(limit)
 			.skip(skip);
-		const totalFeaturedProducts = await Product.countDocuments();
+		const totalProducts = await Product.countDocuments();
 		return res.status(200).json(
 			new ApiResponse(200, {
-				featuredProducts,
-				totalFeaturedProducts,
+				products,
+				totalProducts,
+			})
+		);
+	}
+);
+
+// GET Filtered Products
+export const filteredproducts = asyncHandler(
+	async (req: Request, res: Response, next: NextFunction) => {
+		const page = Number(req.query.page) || 1;
+		const { search, parentCategoryId, childCategoryId } = req.query;
+		console.log(search, parentCategoryId, childCategoryId);
+		const limit = 10;
+		const skip = (page - 1) * limit;
+		const features = new Features(
+			search ? (search as string) : "",
+			parentCategoryId ? (parentCategoryId as string) : "",
+			childCategoryId ? (childCategoryId as string) : ""
+		);
+		const query = features.filter();
+		console.log(query);
+		const filteredProducts = await Product.find(query)
+			.populate({
+				path: "category",
+				populate: {
+					path: "parentCategory",
+				},
+			})
+			.populate("color")
+			.populate("unit")
+			.limit(limit)
+			.skip(skip);
+		return res.status(200).json(
+			new ApiResponse(200, {
+				filteredProducts,
 			})
 		);
 	}
@@ -289,3 +327,32 @@ export const deleteReview = async (
 		.status(200)
 		.json(new ApiResponse(200, {}, "Review deleted successfully!"));
 };
+
+// GET All Parent Categories
+export const allParentCategories = asyncHandler(
+	async (req: Request, res: Response, next: NextFunction) => {
+		const parentCategories = await ParentCategory.find();
+		const totalParentCategories = await ParentCategory.countDocuments();
+		return res.status(200).json(
+			new ApiResponse(200, {
+				parentCategories,
+				totalParentCategories,
+			})
+		);
+	}
+);
+
+// GET All Child Of A Parent Category
+export const allChildCategoriesOfParentCategory = asyncHandler(
+	async (req: Request, res: Response, next: NextFunction) => {
+		const { id } = req.params;
+		const childCategories = await ChildCategory.find({
+			parentCategory: id,
+		});
+		return res.status(200).json(
+			new ApiResponse(200, {
+				childCategories,
+			})
+		);
+	}
+);

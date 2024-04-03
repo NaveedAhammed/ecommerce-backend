@@ -4,11 +4,15 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import Billboard from "../models/billboards.model.js";
 import User from "../models/user.model.js";
+import ParentCategory from "../models/parentCategory.model.js";
+import ChildCategory from "../models/childCategory.model.js";
+import Features from "../utils/Features.js";
+// GET All Products
 export const getAllproducts = asyncHandler(async (req, res, next) => {
     const page = Number(req.query.page) || 1;
     const limit = 10;
     const skip = (page - 1) * limit;
-    const featuredProducts = await Product.find()
+    const products = await Product.find()
         .populate({
         path: "category",
         populate: {
@@ -19,10 +23,35 @@ export const getAllproducts = asyncHandler(async (req, res, next) => {
         .populate("unit")
         .limit(limit)
         .skip(skip);
-    const totalFeaturedProducts = await Product.countDocuments();
+    const totalProducts = await Product.countDocuments();
     return res.status(200).json(new ApiResponse(200, {
-        featuredProducts,
-        totalFeaturedProducts,
+        products,
+        totalProducts,
+    }));
+});
+// GET Filtered Products
+export const filteredproducts = asyncHandler(async (req, res, next) => {
+    const page = Number(req.query.page) || 1;
+    const { search, parentCategoryId, childCategoryId } = req.query;
+    console.log(search, parentCategoryId, childCategoryId);
+    const limit = 10;
+    const skip = (page - 1) * limit;
+    const features = new Features(search ? search : "", parentCategoryId ? parentCategoryId : "", childCategoryId ? childCategoryId : "");
+    const query = features.filter();
+    console.log(query);
+    const filteredProducts = await Product.find(query)
+        .populate({
+        path: "category",
+        populate: {
+            path: "parentCategory",
+        },
+    })
+        .populate("color")
+        .populate("unit")
+        .limit(limit)
+        .skip(skip);
+    return res.status(200).json(new ApiResponse(200, {
+        filteredProducts,
     }));
 });
 // GET Featured Products
@@ -224,3 +253,22 @@ export const deleteReview = async (req, res, next) => {
         .status(200)
         .json(new ApiResponse(200, {}, "Review deleted successfully!"));
 };
+// GET All Parent Categories
+export const allParentCategories = asyncHandler(async (req, res, next) => {
+    const parentCategories = await ParentCategory.find();
+    const totalParentCategories = await ParentCategory.countDocuments();
+    return res.status(200).json(new ApiResponse(200, {
+        parentCategories,
+        totalParentCategories,
+    }));
+});
+// GET All Child Of A Parent Category
+export const allChildCategoriesOfParentCategory = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+    const childCategories = await ChildCategory.find({
+        parentCategory: id,
+    });
+    return res.status(200).json(new ApiResponse(200, {
+        childCategories,
+    }));
+});

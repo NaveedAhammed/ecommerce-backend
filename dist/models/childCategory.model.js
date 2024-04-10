@@ -8,7 +8,6 @@ const childCategorySchema = new Schema({
     name: {
         type: String,
         required: [true, "Child category is required"],
-        unique: true,
     },
 }, { timestamps: true });
 const ChildCategory = model("ChildCategory", childCategorySchema);

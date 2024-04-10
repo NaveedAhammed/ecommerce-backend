@@ -328,7 +328,6 @@ export const createColor = asyncHandler(
 export const createChildCategory = asyncHandler(
 	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
 		const { parentCategoryId, name } = req.body;
-		console.log(req.body);
 		if (!parentCategoryId || !name) {
 			return next(new ApiError(402, "Please enter valid inputs"));
 		}
@@ -356,7 +355,6 @@ export const createChildCategory = asyncHandler(
 export const createParentCategory = asyncHandler(
 	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
 		const { name } = req.body;
-		console.log(req.body);
 		if (!name) {
 			return next(new ApiError(402, "Please enter valid inputs"));
 		}
@@ -444,7 +442,6 @@ export const updateProduct = asyncHandler(
 			unitId,
 			featured,
 		} = req.body;
-		console.log(req.body, req.file);
 		const images = req.files as Express.Multer.File[];
 		const product = await Product.findById(id);
 		const prevImages = product?.images;
@@ -651,7 +648,6 @@ export const updateBillboard = asyncHandler(
 		const { id } = req.params;
 		const { title, categoryId, imageUrl } = req.body;
 		const image = req?.file;
-		console.log(title, categoryId, image, imageUrl);
 		if (!title || !categoryId) {
 			return next(new ApiError(402, "Please enter valid inputs"));
 		}
@@ -868,7 +864,6 @@ export const refresh = asyncHandler(
 			process.env.REFRESH_TOKEN_SECRET as string,
 			(err: any, decoded: any) => {
 				if (err) {
-					console.log("Hello");
 					return next(
 						new ApiError(401, "Refresh token has been expired")
 					);

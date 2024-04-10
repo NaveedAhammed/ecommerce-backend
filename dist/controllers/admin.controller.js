@@ -232,7 +232,6 @@ export const createColor = asyncHandler(async (req, res, next) => {
 // POST Create Child Category
 export const createChildCategory = asyncHandler(async (req, res, next) => {
     const { parentCategoryId, name } = req.body;
-    console.log(req.body);
     if (!parentCategoryId || !name) {
         return next(new ApiError(402, "Please enter valid inputs"));
     }
@@ -249,7 +248,6 @@ export const createChildCategory = asyncHandler(async (req, res, next) => {
 // POST Create Parent Category
 export const createParentCategory = asyncHandler(async (req, res, next) => {
     const { name } = req.body;
-    console.log(req.body);
     if (!name) {
         return next(new ApiError(402, "Please enter valid inputs"));
     }
@@ -301,7 +299,6 @@ export const updateUserRole = asyncHandler(async (req, res, next) => {
 export const updateProduct = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
     const { title, description, price, brand, stock, discount, childCategoryId, colorId, unitId, featured, } = req.body;
-    console.log(req.body, req.file);
     const images = req.files;
     const product = await Product.findById(id);
     const prevImages = product?.images;
@@ -437,7 +434,6 @@ export const updateBillboard = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
     const { title, categoryId, imageUrl } = req.body;
     const image = req?.file;
-    console.log(title, categoryId, image, imageUrl);
     if (!title || !categoryId) {
         return next(new ApiError(402, "Please enter valid inputs"));
     }
@@ -592,7 +588,6 @@ export const refresh = asyncHandler(async (req, res, next) => {
     }
     jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
         if (err) {
-            console.log("Hello");
             return next(new ApiError(401, "Refresh token has been expired"));
         }
         const accessToken = jwt.sign({ id: user._id, username: decoded.username }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRY });

@@ -32,7 +32,6 @@ export const getAllproducts = asyncHandler(async (req, res, next) => {
 // GET Search Suggetions
 export const searchSuggetions = asyncHandler(async (req, res, next) => {
     const { query } = req.query;
-    console.log(query);
     const products = await Product.find({
         $or: [
             {

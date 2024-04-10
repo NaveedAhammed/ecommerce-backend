@@ -42,7 +42,6 @@ export const getAllproducts = asyncHandler(
 export const searchSuggetions = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
 		const { query } = req.query;
-		console.log(query);
 		const products = await Product.find({
 			$or: [
 				{

@@ -5,10 +5,12 @@ import {
 	addorRemoveWishlistId,
 	deleteCartItem,
 	deleteShippingAddress,
+	forgotPassword,
 	loginUser,
 	myProfile,
 	refresh,
 	registerUser,
+	resetPassword,
 	toggleCartItemQuantity,
 	updateMyProfile,
 	updateProfilePicture,
@@ -38,6 +40,10 @@ router.route("/user/cart/add/:productId").post(isAuth, addToCart);
 router.route("/user/cart/:productId").post(isAuth, toggleCartItemQuantity);
 // POST add new shipping address
 router.route("/user/shippingAddress/new").post(isAuth, addShippingAddress);
+// POST forgot password
+router.route("/password/forgot").post(forgotPassword);
+// POST reset password
+router.route("/password/reset/:token").post(resetPassword);
 
 // <---------- PUT REQUEST ---------->
 // PUT my profile

@@ -99,7 +99,7 @@ export const newArrivalProducts = asyncHandler(async (req, res, next) => {
     const limit = 10;
     const skip = (page - 1) * limit;
     const newArrivalProducts = await Product.find()
-        .sort({ updatedAt: -1 })
+        .sort({ createdAt: -1 })
         .populate({
         path: "category",
         populate: {

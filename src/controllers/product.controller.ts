@@ -131,7 +131,7 @@ export const newArrivalProducts = asyncHandler(
 		const limit = 10;
 		const skip = (page - 1) * limit;
 		const newArrivalProducts = await Product.find()
-			.sort({ updatedAt: -1 })
+			.sort({ createdAt: -1 })
 			.populate({
 				path: "category",
 				populate: {

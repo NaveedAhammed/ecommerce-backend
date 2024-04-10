@@ -16,6 +16,7 @@ const childCategorySchema = new Schema<IChildCategory>(
 		name: {
 			type: String,
 			required: [true, "Child category is required"],
+			unique: true,
 		},
 	},
 	{ timestamps: true }

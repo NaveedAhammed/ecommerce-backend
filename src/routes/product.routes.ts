@@ -12,6 +12,7 @@ import {
 	newArrivalProducts,
 	productDetails,
 	productReviews,
+	searchSuggetions,
 	similarProducts,
 	wishlistProducts,
 } from "../controllers/product.controller.js";
@@ -46,6 +47,8 @@ router.route("/category/parent/public").get(allParentCategories);
 router
 	.route("/category/child/public/:id")
 	.get(allChildCategoriesOfParentCategory);
+// GET search suggetions
+router.route("/search").get(searchSuggetions);
 
 // <---------- POST REQUEST ---------->
 // POST create/update product review

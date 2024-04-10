@@ -29,6 +29,37 @@ export const getAllproducts = asyncHandler(async (req, res, next) => {
         totalProducts,
     }));
 });
+// GET Search Suggetions
+export const searchSuggetions = asyncHandler(async (req, res, next) => {
+    const { query } = req.query;
+    console.log(query);
+    const products = await Product.find({
+        $or: [
+            {
+                title: {
+                    $regex: query,
+                    $options: "i",
+                },
+            },
+            {
+                brand: {
+                    $regex: query,
+                    $options: "i",
+                },
+            },
+        ],
+    });
+    const childCategories = await ChildCategory.find({
+        name: {
+            $regex: query,
+            $options: "i",
+        },
+    });
+    return res.status(200).json(new ApiResponse(200, {
+        products,
+        childCategories,
+    }));
+});
 // GET Filtered Products
 export const filteredproducts = asyncHandler(async (req, res, next) => {
     const page = Number(req.query.page) || 1;

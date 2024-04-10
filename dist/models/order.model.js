@@ -14,10 +14,6 @@ const orderSchema = new Schema({
             type: String,
             required: [true, "State is required"],
         },
-        country: {
-            type: String,
-            required: [true, "County is required"],
-        },
         pincode: {
             type: Number,
             required: [true, "Pincode is required"],
@@ -25,31 +21,13 @@ const orderSchema = new Schema({
         phone: {
             type: Number,
             required: [true, "Phone number is required"],
-            validate: {
-                validator: function (value) {
-                    return /^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}$/.test(value);
-                },
-                message: (props) => `${props.value} is not a valid phone number`,
-            },
         },
     },
     orderItems: [
         {
-            title: {
-                type: String,
-                required: [true, "Title is required"],
-            },
-            price: {
-                type: Number,
-                required: [true, "Price is required"],
-            },
             quantity: {
                 type: Number,
                 required: [true, "Quantity is required"],
-            },
-            image: {
-                type: String,
-                required: [true, "Image is required"],
             },
             productId: {
                 type: Schema.ObjectId,

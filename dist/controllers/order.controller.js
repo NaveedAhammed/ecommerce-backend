@@ -21,6 +21,20 @@ export const createOrder = asyncHandler(async (req, res, next) => {
         .status(201)
         .json(new ApiResponse(201, {}, "Order placed successfully!"));
 });
+// POST Update Payment Status After Payment
+export const paymentStatus = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+    const order = await Order.findById(id);
+    if (!order) {
+        return next(new ApiError(404, "Order not found!"));
+    }
+    order.paymentInfo = req.body.status;
+    order.paidAt = new Date(Date.now());
+    await order.save({ validateBeforeSave: false });
+    return res.status(200).json(new ApiResponse(200, {
+        order,
+    }));
+});
 // GET Order Details
 export const orderDetails = asyncHandler(async (req, res, next) => {
     const { id } = req.params;

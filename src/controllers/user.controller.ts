@@ -112,6 +112,7 @@ export const loginUser = asyncHandler(
 							wishlistIds: user.wishlistIds,
 							gender: user?.gender,
 							cart: user?.cart,
+							shippingAddresses: user?.shippingAddresses,
 						},
 						accessToken,
 					},

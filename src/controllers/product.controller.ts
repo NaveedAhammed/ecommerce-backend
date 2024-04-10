@@ -42,31 +42,22 @@ export const getAllproducts = asyncHandler(
 export const filteredproducts = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
 		const page = Number(req.query.page) || 1;
-		const { search, parentCategoryId, childCategoryId } = req.query;
-		console.log(search, parentCategoryId, childCategoryId);
-		const limit = 10;
+		const { search, parentCategoryId, childCategoryId, brands, discount } =
+			req.query;
+		const limit = 20;
 		const skip = (page - 1) * limit;
 		const features = new Features(
 			search ? (search as string) : "",
 			parentCategoryId ? (parentCategoryId as string) : "",
-			childCategoryId ? (childCategoryId as string) : ""
+			childCategoryId ? (childCategoryId as string) : "",
+			brands ? JSON.parse(brands as string) : [],
+			discount ? Number(discount as string) : 0
 		);
-		const query = features.filter();
-		console.log(query);
-		const filteredProducts = await Product.find(query)
-			.populate({
-				path: "category",
-				populate: {
-					path: "parentCategory",
-				},
-			})
-			.populate("color")
-			.populate("unit")
-			.limit(limit)
-			.skip(skip);
+		const data = await features.filter(skip, limit, page);
 		return res.status(200).json(
 			new ApiResponse(200, {
-				filteredProducts,
+				filteredProducts: data.products,
+				brands: data.brands,
 			})
 		);
 	}

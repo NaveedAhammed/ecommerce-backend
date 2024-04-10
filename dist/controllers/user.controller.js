@@ -89,6 +89,7 @@ export const loginUser = asyncHandler(async (req, res, next) => {
             wishlistIds: user.wishlistIds,
             gender: user?.gender,
             cart: user?.cart,
+            shippingAddresses: user?.shippingAddresses,
         },
         accessToken,
     }, "Logged in successfully"));

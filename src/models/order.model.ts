@@ -15,22 +15,18 @@ interface IOrder {
 	deliveredAt?: Date;
 }
 
-interface IShippingInfo {
+export interface IShippingInfo {
 	name: string;
 	locality: string;
 	address: string;
 	city: string;
 	state: string;
-	country: string;
 	pincode: number;
 	phone: number;
 }
 
 interface IOrderItem {
-	title: string;
-	price: string;
-	quantity: string;
-	image: string;
+	quantity: number;
 	productId: Types.ObjectId;
 }
 
@@ -48,10 +44,6 @@ const orderSchema = new Schema<IOrder>({
 			type: String,
 			required: [true, "State is required"],
 		},
-		country: {
-			type: String,
-			required: [true, "County is required"],
-		},
 		pincode: {
 			type: Number,
 			required: [true, "Pincode is required"],
@@ -59,34 +51,13 @@ const orderSchema = new Schema<IOrder>({
 		phone: {
 			type: Number,
 			required: [true, "Phone number is required"],
-			validate: {
-				validator: function (value: string) {
-					return /^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}$/.test(
-						value
-					);
-				},
-				message: (props: mongoose.ValidatorProps) =>
-					`${props.value} is not a valid phone number`,
-			},
 		},
 	},
 	orderItems: [
 		{
-			title: {
-				type: String,
-				required: [true, "Title is required"],
-			},
-			price: {
-				type: Number,
-				required: [true, "Price is required"],
-			},
 			quantity: {
 				type: Number,
 				required: [true, "Quantity is required"],
-			},
-			image: {
-				type: String,
-				required: [true, "Image is required"],
 			},
 			productId: {
 				type: Schema.ObjectId,

@@ -12,6 +12,7 @@ app.use(cors({
         "http://localhost:5175",
         "https://ecommerce-backend-af7n.onrender.com",
         "https://ecommerce-frontend-yunh.onrender.com",
+        "https://ecommerce-admin-v3hk.onrender.com",
     ],
     credentials: true,
     optionsSuccessStatus: 200,

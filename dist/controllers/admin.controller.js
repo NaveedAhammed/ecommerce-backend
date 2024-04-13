@@ -38,6 +38,7 @@ export const adminLogin = asyncHandler(async (req, res, next) => {
         httpOnly: true,
         secure: true,
         expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        sameSite: "none",
     };
     return res
         .status(200)

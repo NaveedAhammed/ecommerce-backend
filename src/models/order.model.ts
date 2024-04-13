@@ -8,7 +8,6 @@ interface IOrder {
 	userId: Types.ObjectId;
 	paymentInfo: string;
 	paidAt?: Date;
-	taxPrice: number;
 	shippingPrice: number;
 	orderStatus: string;
 	orderedAt: Date;
@@ -28,6 +27,8 @@ export interface IShippingInfo {
 interface IOrderItem {
 	quantity: number;
 	productId: Types.ObjectId;
+	price: number;
+	discount: number;
 }
 
 const orderSchema = new Schema<IOrder>({
@@ -64,6 +65,14 @@ const orderSchema = new Schema<IOrder>({
 				required: [true, "Product id is required"],
 				ref: "Product",
 			},
+			price: {
+				type: Number,
+				required: [true, "Product price is required"],
+			},
+			discount: {
+				type: Number,
+				required: [true, "Product discount is required"],
+			},
 		},
 	],
 	userId: {
@@ -80,10 +89,6 @@ const orderSchema = new Schema<IOrder>({
 	},
 	paidAt: {
 		type: Date,
-	},
-	taxPrice: {
-		type: Number,
-		required: [true, "Tax price is required"],
 	},
 	shippingPrice: {
 		type: Number,
@@ -106,6 +111,6 @@ const orderSchema = new Schema<IOrder>({
 	deliveredAt: Date,
 });
 
-const Order = model("Order", orderSchema);
+const Order = model<IOrder>("Order", orderSchema);
 
 export default Order;

@@ -4,7 +4,6 @@ import User from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import Stripe from "stripe";
 import Order from "../models/order.model.js";
-import { buffer } from "micro";
 const STRIPE = new Stripe(process.env.STRIPE_SECRET_KEY);
 // GET Checkout Session
 export const checkoutSession = asyncHandler(async (req, res, next) => {
@@ -17,6 +16,8 @@ export const checkoutSession = asyncHandler(async (req, res, next) => {
     const orderItems = cart.map((item) => ({
         quantity: item.quantity,
         productId: item.productId,
+        price: item.productId.price,
+        discount: item.productId.discount,
     }));
     const order = new Order({
         userId: req.user._id,
@@ -33,7 +34,6 @@ export const checkoutSession = asyncHandler(async (req, res, next) => {
         orderStatus: "processing",
         orderedAt: Date.now(),
         paymentInfo: "pending",
-        taxPrice: 0,
         shippingPrice: 0,
     });
     await order.save();
@@ -81,20 +81,4 @@ export const checkoutSession = asyncHandler(async (req, res, next) => {
         sessionId: session.id,
         order,
     }));
-});
-export const webhook = asyncHandler(async (req, res, next) => {
-    const sig = req.headers["stripe-signature"];
-    let event;
-    try {
-        event = Stripe.webhooks.constructEvent(await buffer(req), sig, process.env.WEBHOOK_SECRET);
-    }
-    catch (err) {
-        console.log("Event Error:", err);
-        return;
-    }
-    if (event.type === "checkout.session.completed") {
-        const session = event.data.object;
-        console.log(session?.metadata);
-    }
-    res.send();
 });

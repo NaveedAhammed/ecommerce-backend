@@ -8,6 +8,7 @@ import Stripe from "stripe";
 import { IProduct } from "../models/product.model.js";
 import Order, { IShippingInfo } from "../models/order.model.js";
 import { buffer } from "micro";
+import { IncomingMessage } from "http";
 
 const STRIPE = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
@@ -23,6 +24,8 @@ export const checkoutSession = asyncHandler(
 		const orderItems = cart.map((item) => ({
 			quantity: item.quantity,
 			productId: item.productId,
+			price: item.productId.price,
+			discount: item.productId.discount,
 		}));
 		const order = new Order({
 			userId: req.user._id,
@@ -39,7 +42,6 @@ export const checkoutSession = asyncHandler(
 			orderStatus: "processing",
 			orderedAt: Date.now(),
 			paymentInfo: "pending",
-			taxPrice: 0,
 			shippingPrice: 0,
 		});
 		await order.save();
@@ -90,29 +92,5 @@ export const checkoutSession = asyncHandler(
 				order,
 			})
 		);
-	}
-);
-
-export const webhook = asyncHandler(
-	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-		const sig = req.headers["stripe-signature"];
-
-		let event: Stripe.Event;
-
-		try {
-			event = Stripe.webhooks.constructEvent(
-				await buffer(req),
-				sig as string,
-				process.env.WEBHOOK_SECRET as string
-			);
-		} catch (err) {
-			console.log("Event Error:", err);
-			return;
-		}
-		if (event.type === "checkout.session.completed") {
-			const session = event.data.object as Stripe.Checkout.Session;
-			console.log(session?.metadata);
-		}
-		res.send();
 	}
 );

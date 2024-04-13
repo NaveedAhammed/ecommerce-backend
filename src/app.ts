@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import "dotenv/config";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -24,6 +24,19 @@ app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 app.use(cookieParser());
 
+app.get("/health", (req: Request, res: Response) => {
+	res.send({ message: "Health OK!" });
+});
+
+// webhook route
+app.post(
+	"/webhook",
+	express.json({ type: "application/json" }),
+	async (req, res) => {
+		res.status(200).end(); //add .end() to solve the issue
+	}
+);
+
 // routes import
 import userRoutes from "./routes/user.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
@@ -36,6 +49,7 @@ app.use("/api/v1", productRoutes);
 app.use("/api/v1", checkoutRoutes);
 
 import { error } from "./middlewares/error.middleware.js";
+import { buffer } from "micro";
 // error middleware
 app.use(error);
 

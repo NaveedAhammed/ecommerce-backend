@@ -34,6 +34,14 @@ const orderSchema = new Schema({
                 required: [true, "Product id is required"],
                 ref: "Product",
             },
+            price: {
+                type: Number,
+                required: [true, "Product price is required"],
+            },
+            discount: {
+                type: Number,
+                required: [true, "Product discount is required"],
+            },
         },
     ],
     userId: {
@@ -50,10 +58,6 @@ const orderSchema = new Schema({
     },
     paidAt: {
         type: Date,
-    },
-    taxPrice: {
-        type: Number,
-        required: [true, "Tax price is required"],
     },
     shippingPrice: {
         type: Number,

@@ -23,9 +23,9 @@ export type ImageType = {
 
 export interface IReview {
 	userId: Types.ObjectId;
-	username: string;
 	numRating: number;
 	comment: string;
+	postedAt: Date;
 }
 
 const productSchema = new Schema<IProduct>(
@@ -95,10 +95,6 @@ const productSchema = new Schema<IProduct>(
 					required: [true, "User id is required"],
 					ref: "User",
 				},
-				username: {
-					type: String,
-					required: [true, "Username is required"],
-				},
 				numRating: {
 					type: Number,
 					required: [true, "User rating is required"],
@@ -108,6 +104,10 @@ const productSchema = new Schema<IProduct>(
 				comment: {
 					type: String,
 					required: [true, "Comment is required"],
+				},
+				postedAt: {
+					type: Date,
+					default: Date.now(),
 				},
 			},
 		],

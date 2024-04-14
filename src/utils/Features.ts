@@ -8,19 +8,31 @@ class Features {
 	childCategoryId: string;
 	brands: string[];
 	discount: number;
+	featured: boolean;
+	newArrivals: boolean;
+	minPrice: number | null;
+	maxPrice: number | null;
 
 	constructor(
 		search: string,
 		parentCategoryId: string,
 		childCategoryId: string,
 		brands: string[],
-		discount: number
+		discount: number,
+		featured: boolean,
+		newArrivals: boolean,
+		minPrice,
+		maxPrice
 	) {
 		this.searchQuery = search;
 		this.parentCategoryId = parentCategoryId;
 		this.childCategoryId = childCategoryId;
 		this.brands = brands;
 		this.discount = discount;
+		this.featured = featured;
+		this.newArrivals = newArrivals;
+		this.minPrice = minPrice;
+		this.maxPrice = maxPrice;
 	}
 
 	public async filter(skip: number, limit: number, page: number) {
@@ -45,8 +57,19 @@ class Features {
 		if (this.discount > 0) {
 			query["discount"] = { $gte: this.discount };
 		}
+		if (this.featured) {
+			query["featured"] = this.featured;
+		}
+		if (this.maxPrice && this.minPrice) {
+			query["price"] = { $gte: this.minPrice, $lte: this.maxPrice };
+		} else if (this.minPrice && !this.maxPrice) {
+			query["price"] = { $gte: this.minPrice };
+		} else {
+			query["price"] = { $lte: this.maxPrice };
+		}
 		if (childCategoriesIds.length === 0) {
 			products = await Product.find({ ...query })
+				.sort(this.newArrivals ? { createdAt: -1 } : {})
 				.populate({
 					path: "category",
 					populate: {
@@ -62,6 +85,7 @@ class Features {
 				category: { $in: childCategoriesIds },
 				...query,
 			})
+				.sort(this.newArrivals ? { createdAt: -1 } : {})
 				.populate({
 					path: "category",
 					populate: {

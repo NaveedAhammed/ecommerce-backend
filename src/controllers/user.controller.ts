@@ -251,8 +251,8 @@ export const deleteShippingAddress = asyncHandler(
 
 // POST Logout User
 export const logoutUser = asyncHandler(
-	async (req: IGetUserAuthInfoRequest, res: Response, _: NextFunction) => {
-		await User.findByIdAndUpdate(
+	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+		const user = await User.findByIdAndUpdate(
 			req.user._id,
 			{
 				$unset: {
@@ -261,13 +261,15 @@ export const logoutUser = asyncHandler(
 			},
 			{ new: true }
 		);
+		if (!user) {
+			return next(new ApiError(400, "Something went wrong"));
+		}
 		const options: CookieOptions = {
 			httpOnly: true,
 			secure: true,
 		};
 		return res
 			.status(200)
-			.clearCookie("accessToken", options)
 			.clearCookie("refreshToken", options)
 			.json(new ApiResponse(200, {}, "User logged out"));
 	}

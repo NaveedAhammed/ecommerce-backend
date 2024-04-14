@@ -7,6 +7,7 @@ import {
 	deleteShippingAddress,
 	forgotPassword,
 	loginUser,
+	logoutUser,
 	myProfile,
 	refresh,
 	registerUser,
@@ -32,6 +33,8 @@ router.route("/refresh").get(refresh);
 router.route("/register").post(registerUser);
 // POST login user
 router.route("/login").post(loginUser);
+// POST logout user
+router.route("/logout").post(isAuth, logoutUser);
 // POST add or remove wishlist
 router.route("/user/wishlist/:productId").post(isAuth, addorRemoveWishlistId);
 // POST add to cart

@@ -2,12 +2,16 @@ import { ObjectId } from "mongodb";
 import ChildCategory from "../models/childCategory.model.js";
 import Product from "../models/product.model.js";
 class Features {
-    constructor(search, parentCategoryId, childCategoryId, brands, discount) {
+    constructor(search, parentCategoryId, childCategoryId, brands, discount, featured, newArrivals, minPrice, maxPrice) {
         this.searchQuery = search;
         this.parentCategoryId = parentCategoryId;
         this.childCategoryId = childCategoryId;
         this.brands = brands;
         this.discount = discount;
+        this.featured = featured;
+        this.newArrivals = newArrivals;
+        this.minPrice = minPrice;
+        this.maxPrice = maxPrice;
     }
     async filter(skip, limit, page) {
         let childCategoriesIds = [];
@@ -31,8 +35,21 @@ class Features {
         if (this.discount > 0) {
             query["discount"] = { $gte: this.discount };
         }
+        if (this.featured) {
+            query["featured"] = this.featured;
+        }
+        if (this.maxPrice && this.minPrice) {
+            query["price"] = { $gte: this.minPrice, $lte: this.maxPrice };
+        }
+        else if (this.minPrice && !this.maxPrice) {
+            query["price"] = { $gte: this.minPrice };
+        }
+        else {
+            query["price"] = { $lte: this.maxPrice };
+        }
         if (childCategoriesIds.length === 0) {
             products = await Product.find({ ...query })
+                .sort(this.newArrivals ? { createdAt: -1 } : {})
                 .populate({
                 path: "category",
                 populate: {
@@ -49,6 +66,7 @@ class Features {
                 category: { $in: childCategoriesIds },
                 ...query,
             })
+                .sort(this.newArrivals ? { createdAt: -1 } : {})
                 .populate({
                 path: "category",
                 populate: {

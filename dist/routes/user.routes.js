@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { addShippingAddress, addToCart, addorRemoveWishlistId, deleteCartItem, deleteShippingAddress, forgotPassword, loginUser, myProfile, refresh, registerUser, resetPassword, toggleCartItemQuantity, updateMyProfile, updateProfilePicture, updateShippingAddress, } from "../controllers/user.controller.js";
+import { addShippingAddress, addToCart, addorRemoveWishlistId, deleteCartItem, deleteShippingAddress, forgotPassword, loginUser, logoutUser, myProfile, refresh, registerUser, resetPassword, toggleCartItemQuantity, updateMyProfile, updateProfilePicture, updateShippingAddress, } from "../controllers/user.controller.js";
 import { isAuth } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 const router = Router();
@@ -13,6 +13,8 @@ router.route("/refresh").get(refresh);
 router.route("/register").post(registerUser);
 // POST login user
 router.route("/login").post(loginUser);
+// POST logout user
+router.route("/logout").post(isAuth, logoutUser);
 // POST add or remove wishlist
 router.route("/user/wishlist/:productId").post(isAuth, addorRemoveWishlistId);
 // POST add to cart

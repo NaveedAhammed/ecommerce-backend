@@ -65,10 +65,6 @@ const productSchema = new Schema({
                 required: [true, "User id is required"],
                 ref: "User",
             },
-            username: {
-                type: String,
-                required: [true, "Username is required"],
-            },
             numRating: {
                 type: Number,
                 required: [true, "User rating is required"],
@@ -78,6 +74,10 @@ const productSchema = new Schema({
             comment: {
                 type: String,
                 required: [true, "Comment is required"],
+            },
+            postedAt: {
+                type: Date,
+                default: Date.now(),
             },
         },
     ],

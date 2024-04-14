@@ -77,8 +77,17 @@ export const searchSuggetions = asyncHandler(
 export const filteredproducts = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
 		const page = Number(req.query.page) || 1;
-		const { search, parentCategoryId, childCategoryId, brands, discount } =
-			req.query;
+		const {
+			search,
+			parentCategoryId,
+			childCategoryId,
+			brands,
+			discount,
+			featured,
+			newArrivals,
+			minPrice,
+			maxPrice,
+		} = req.query;
 		const limit = 20;
 		const skip = (page - 1) * limit;
 		const features = new Features(
@@ -86,7 +95,11 @@ export const filteredproducts = asyncHandler(
 			parentCategoryId ? (parentCategoryId as string) : "",
 			childCategoryId ? (childCategoryId as string) : "",
 			brands ? JSON.parse(brands as string) : [],
-			discount ? Number(discount as string) : 0
+			discount ? Number(discount as string) : 0,
+			JSON.parse(featured as string) ? Boolean(featured) : false,
+			JSON.parse(newArrivals as string) ? Boolean(newArrivals) : false,
+			JSON.parse(minPrice as string) ? Number(minPrice) : null,
+			JSON.parse(maxPrice as string) ? Number(maxPrice) : null
 		);
 		const data = await features.filter(skip, limit, page);
 		return res.status(200).json(
@@ -160,8 +173,6 @@ export const similarProducts = asyncHandler(
 // GET New Arrival Products
 export const newArrivalProducts = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
-		const { categoryId } = req.params;
-		const { productId } = req.query;
 		const page = Number(req.query.page) || 1;
 		const limit = 10;
 		const skip = (page - 1) * limit;
@@ -258,7 +269,13 @@ export const productDetails = asyncHandler(
 				},
 			})
 			.populate("color")
-			.populate("unit");
+			.populate("unit")
+			.populate({
+				path: "reviews",
+				populate: {
+					path: "userId",
+				},
+			});
 		if (!product) {
 			return next(
 				new ApiError(404, `No product found with this id:${id}`)
@@ -278,7 +295,8 @@ export const createOrUpdateReview = async (
 	res: Response,
 	next: NextFunction
 ) => {
-	const { numRating, comment, id } = req.body;
+	const { numRating, comment } = req.body;
+	const { id } = req.params;
 	const product = await Product.findById(id);
 	if (!product) {
 		return next(new ApiError(404, "Product not found!"));
@@ -291,21 +309,22 @@ export const createOrUpdateReview = async (
 			if (rev.userId.toString() === req.user._id.toString()) {
 				rev.numRating = Number(numRating);
 				rev.comment = comment;
+				rev.postedAt = new Date(Date.now());
 			}
 		});
 	} else {
 		const review: IReview = {
 			userId: req.user._id,
-			username: req.user.username,
 			numRating: Number(numRating),
 			comment,
+			postedAt: new Date(Date.now()),
 		};
 		product.reviews.push(review);
 	}
 	product.numRating =
 		product.reviews.reduce((acc, curr) => acc + curr.numRating, 0) /
 		product.reviews.length;
-	await product.save();
+	await product.save({ validateBeforeSave: false });
 	return res
 		.status(200)
 		.json(new ApiResponse(200, {}, "Review submitted successfully!"));

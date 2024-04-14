@@ -170,19 +170,21 @@ export const deleteShippingAddress = asyncHandler(async (req, res, next) => {
     }, "Address deleted successfully"));
 });
 // POST Logout User
-export const logoutUser = asyncHandler(async (req, res, _) => {
-    await User.findByIdAndUpdate(req.user._id, {
+export const logoutUser = asyncHandler(async (req, res, next) => {
+    const user = await User.findByIdAndUpdate(req.user._id, {
         $unset: {
             refreshToken: 1,
         },
     }, { new: true });
+    if (!user) {
+        return next(new ApiError(400, "Something went wrong"));
+    }
     const options = {
         httpOnly: true,
         secure: true,
     };
     return res
         .status(200)
-        .clearCookie("accessToken", options)
         .clearCookie("refreshToken", options)
         .json(new ApiResponse(200, {}, "User logged out"));
 });

@@ -52,7 +52,7 @@ router.route("/search").get(searchSuggetions);
 
 // <---------- POST REQUEST ---------->
 // POST create/update product review
-router.route("/products/:id").post(isAuth, createOrUpdateReview as any);
+router.route("/product/review/:id").post(isAuth, createOrUpdateReview as any);
 
 // <---------- DELETE REQUEST ---------->
 // DELETE product review

@@ -33,7 +33,7 @@ router
 router.route("/search").get(searchSuggetions);
 // <---------- POST REQUEST ---------->
 // POST create/update product review
-router.route("/products/:id").post(isAuth, createOrUpdateReview);
+router.route("/product/review/:id").post(isAuth, createOrUpdateReview);
 // <---------- DELETE REQUEST ---------->
 // DELETE product review
 router.route("/product/review/:id").delete(deleteReview);

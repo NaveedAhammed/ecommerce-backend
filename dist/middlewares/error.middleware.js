@@ -7,6 +7,7 @@ const error = (err, req, res, next) => {
         const message = `Duplicate "${Object.keys(err.keyValue)}" entered`;
         err = new ApiError(400, message);
     }
+    console.log(err);
     return res.status(err.statusCode).json({
         success: err.success,
         message: err.message,

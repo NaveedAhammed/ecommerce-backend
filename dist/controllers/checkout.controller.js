@@ -56,6 +56,7 @@ export const checkoutSession = asyncHandler(async (req, res, next) => {
         line_items,
         metadata: {
             orderId: order._id.toString(),
+            userId: req.user._id.toString(),
         },
         shipping_options: [
             {
@@ -70,8 +71,8 @@ export const checkoutSession = asyncHandler(async (req, res, next) => {
             },
         ],
         mode: "payment",
-        success_url: "http://localhost:5173/checkout",
-        cancel_url: "http://localhost:5173/",
+        success_url: process.env.STRIPE_SUCCESS_URL,
+        cancel_url: process.env.STRIPE_CANCEL_URL,
     });
     if (!session?.url) {
         return next(new ApiError(500, "Error creating stripe session"));
@@ -81,4 +82,33 @@ export const checkoutSession = asyncHandler(async (req, res, next) => {
         sessionId: session.id,
         order,
     }));
+});
+// POST Stripe Webhook
+export const webhook = asyncHandler(async (req, res, next) => {
+    let event;
+    const sig = req.headers["stripe-signature"];
+    try {
+        event = STRIPE.webhooks.constructEvent(req.body, sig, process.env.WEBHOOK_SECRET);
+    }
+    catch (err) {
+        console.log(err);
+        return res.status(400).send(`Webhook error: ${err.message}`);
+    }
+    if (event.type === "checkout.session.completed") {
+        const order = await Order.findById(event.data.object.metadata?.orderId);
+        if (!order) {
+            return next(new ApiError(404, "Order not found"));
+        }
+        const user = await User.findById(event.data.object.metadata?.userId);
+        if (!user) {
+            return next(new ApiError(500, "Something went wrong"));
+        }
+        order.paymentInfo = "success";
+        order.paidAt = new Date(Date.now());
+        await order.save({ validateBeforeSave: false });
+        user.cart = [];
+        await user.save({ validateBeforeSave: false });
+    }
+    console.log(event.type, event.data.object);
+    res.status(200).send();
 });

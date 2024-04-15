@@ -807,13 +807,20 @@ export const deleteUnit = asyncHandler(
 export const updateOrderStatus = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
 		const { id } = req.params;
+		const { orderStatus } = req.body;
 		const order = await Order.findById(id);
 		if (!order) {
 			return next(new ApiError(404, "Order not found!"));
 		}
-		// order.orderItems.forEach((item) => {
-		//   updateStock()
-		// })
+		if (orderStatus === "not placed") {
+			order.paymentInfo = "failed";
+			order.orderStatus = "not placed";
+			await order.save({ validateBeforeSave: false });
+			return res
+				.status(200)
+				.json(new ApiResponse(200, {}, "Order status updated!"));
+		}
+		return res.send();
 	}
 );
 

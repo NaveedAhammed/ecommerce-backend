@@ -2,6 +2,8 @@ import express from "express";
 import "dotenv/config";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import Stripe from "stripe";
+const STRIPE = new Stripe(process.env.STRIPE_SECRET_KEY);
 import { connect } from "./utils/database.js";
 const PORT = process.env.PORT;
 const app = express();
@@ -17,15 +19,12 @@ app.use(cors({
     credentials: true,
     optionsSuccessStatus: 200,
 }));
-app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 app.use(cookieParser());
+app.use("/api/v1/webhook", express.raw({ type: "*/*" }));
+app.use(express.json({ limit: "5mb" }));
 app.get("/health", (req, res) => {
     res.send({ message: "Health OK!" });
-});
-// webhook route
-app.post("/webhook", express.json({ type: "application/json" }), async (req, res) => {
-    res.status(200).end(); //add .end() to solve the issue
 });
 // routes import
 import userRoutes from "./routes/user.routes.js";

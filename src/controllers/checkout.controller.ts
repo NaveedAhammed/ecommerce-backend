@@ -6,9 +6,7 @@ import User from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import Stripe from "stripe";
 import { IProduct } from "../models/product.model.js";
-import Order, { IShippingInfo } from "../models/order.model.js";
-import { buffer } from "micro";
-import { IncomingMessage } from "http";
+import Order from "../models/order.model.js";
 
 const STRIPE = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
@@ -65,6 +63,7 @@ export const checkoutSession = asyncHandler(
 			line_items,
 			metadata: {
 				orderId: order._id.toString(),
+				userId: req.user._id.toString(),
 			},
 			shipping_options: [
 				{
@@ -79,8 +78,8 @@ export const checkoutSession = asyncHandler(
 				},
 			],
 			mode: "payment",
-			success_url: "http://localhost:5173/checkout",
-			cancel_url: "http://localhost:5173/",
+			success_url: process.env.STRIPE_SUCCESS_URL as string,
+			cancel_url: process.env.STRIPE_CANCEL_URL as string,
 		});
 		if (!session?.url) {
 			return next(new ApiError(500, "Error creating stripe session"));
@@ -92,5 +91,46 @@ export const checkoutSession = asyncHandler(
 				order,
 			})
 		);
+	}
+);
+
+// POST Stripe Webhook
+export const webhook = asyncHandler(
+	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+		let event: Stripe.Event;
+		const sig = req.headers["stripe-signature"];
+		try {
+			event = STRIPE.webhooks.constructEvent(
+				req.body,
+				sig as string,
+				process.env.WEBHOOK_SECRET as string
+			);
+		} catch (err: any) {
+			console.log(err);
+			return res.status(400).send(`Webhook error: ${err.message}`);
+		}
+
+		if (event.type === "checkout.session.completed") {
+			const order = await Order.findById(
+				event.data.object.metadata?.orderId
+			);
+			if (!order) {
+				return next(new ApiError(404, "Order not found"));
+			}
+			const user = await User.findById(
+				event.data.object.metadata?.userId
+			);
+			if (!user) {
+				return next(new ApiError(500, "Something went wrong"));
+			}
+			order.paymentInfo = "success";
+			order.paidAt = new Date(Date.now());
+			await order.save({ validateBeforeSave: false });
+			user.cart = [];
+			await user.save({ validateBeforeSave: false });
+		}
+		console.log(event.type, event.data.object);
+
+		res.status(200).send();
 	}
 );

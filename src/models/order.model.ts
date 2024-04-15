@@ -98,7 +98,7 @@ const orderSchema = new Schema<IOrder>({
 		type: String,
 		required: [true, "Order status is required"],
 		enum: {
-			values: ["processing", "shipped", "delivered"],
+			values: ["processing", "shipped", "delivered", "not placed"],
 			message: "{VALUE} is not supported",
 		},
 		default: "processing",

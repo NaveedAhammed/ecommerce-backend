@@ -21,6 +21,7 @@ app.use(
 			"https://ecommerce-backend-af7n.onrender.com",
 			"https://ecommerce-frontend-yunh.onrender.com",
 			"https://ecommerce-admin-v3hk.onrender.com",
+			"https://popshop-a9dp.onrender.com",
 		],
 		credentials: true,
 		optionsSuccessStatus: 200,

@@ -16,6 +16,7 @@ app.use(cors({
         "https://ecommerce-frontend-yunh.onrender.com",
         "https://ecommerce-admin-v3hk.onrender.com",
         "https://popshop-a9dp.onrender.com",
+        "https://pop-shop-peach.vercel.app",
     ],
     credentials: true,
     optionsSuccessStatus: 200,

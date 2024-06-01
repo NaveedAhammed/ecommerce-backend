@@ -7,6 +7,7 @@ import User from "../models/user.model.js";
 import ParentCategory from "../models/parentCategory.model.js";
 import ChildCategory from "../models/childCategory.model.js";
 import Features from "../utils/Features.js";
+import { ObjectId } from "mongodb";
 // GET All Products
 export const getAllproducts = asyncHandler(async (req, res, next) => {
     const page = Number(req.query.page) || 1;
@@ -29,43 +30,42 @@ export const getAllproducts = asyncHandler(async (req, res, next) => {
         totalProducts,
     }));
 });
-// GET Search Suggetions
-export const searchSuggetions = asyncHandler(async (req, res, next) => {
-    const { query } = req.query;
+// GET Search Results
+export const searchResults = asyncHandler(async (req, res, next) => {
+    const { searchQuery } = req.query;
     const products = await Product.find({
         $or: [
             {
                 title: {
-                    $regex: query,
+                    $regex: searchQuery,
                     $options: "i",
                 },
             },
             {
                 brand: {
-                    $regex: query,
+                    $regex: searchQuery,
+                    $options: "i",
+                },
+            },
+            {
+                description: {
+                    $regex: searchQuery,
                     $options: "i",
                 },
             },
         ],
     });
-    const childCategories = await ChildCategory.find({
-        name: {
-            $regex: query,
-            $options: "i",
-        },
-    });
     return res.status(200).json(new ApiResponse(200, {
         products,
-        childCategories,
     }));
 });
 // GET Filtered Products
 export const filteredproducts = asyncHandler(async (req, res, next) => {
     const page = Number(req.query.page) || 1;
-    const { search, parentCategoryId, childCategoryId, brands, discount, featured, newArrivals, minPrice, maxPrice, } = req.query;
+    const { search, parentCategoryId, childCategoryId, customerRating, brands, discount, featured, newArrivals, minPrice, maxPrice, } = req.query;
     const limit = 20;
     const skip = (page - 1) * limit;
-    const features = new Features(search ? search : "", parentCategoryId ? parentCategoryId : "", childCategoryId ? childCategoryId : "", brands ? JSON.parse(brands) : [], discount ? Number(discount) : 0, JSON.parse(featured) ? Boolean(featured) : false, JSON.parse(newArrivals) ? Boolean(newArrivals) : false, JSON.parse(minPrice) ? Number(minPrice) : null, JSON.parse(maxPrice) ? Number(maxPrice) : null);
+    const features = new Features(search ? search : "", parentCategoryId ? parentCategoryId : "", childCategoryId ? childCategoryId : "", brands ? JSON.parse(brands) : [], discount ? Number(discount) : 0, JSON.parse(featured) ? Boolean(featured) : false, JSON.parse(newArrivals) ? Boolean(newArrivals) : false, JSON.parse(minPrice) ? Number(minPrice) : null, JSON.parse(maxPrice) ? Number(maxPrice) : null, customerRating ? Number(customerRating) : 0);
     const data = await features.filter(skip, limit, page);
     return res.status(200).json(new ApiResponse(200, {
         filteredProducts: data.products,
@@ -181,11 +181,11 @@ export const cartProducts = asyncHandler(async (req, res, next) => {
         totalCartProducts: user.cart.length,
     }));
 });
-// GET Active Billboard
-export const activeBillboard = asyncHandler(async (req, res, next) => {
-    const billboard = await Billboard.find({ isActive: true });
+// GET Active Billboards
+export const activeBillboards = asyncHandler(async (req, res, next) => {
+    const billboards = await Billboard.find({ isActive: true }).populate("category parentCategory");
     return res.status(200).json(new ApiResponse(200, {
-        billboard,
+        billboards,
     }));
 });
 // GET Product Details
@@ -218,8 +218,12 @@ export const createOrUpdateReview = async (req, res, next) => {
     const { numRating, comment } = req.body;
     const { id } = req.params;
     const product = await Product.findById(id);
+    const user = await User.findById(req.user._id);
     if (!product) {
         return next(new ApiError(404, "Product not found!"));
+    }
+    if (!user) {
+        return next(new ApiError(404, "User not found!"));
     }
     const isReviewed = product.reviews.find((rev) => rev.userId.toString() === req.user._id.toString());
     if (isReviewed) {
@@ -230,6 +234,13 @@ export const createOrUpdateReview = async (req, res, next) => {
                 rev.postedAt = new Date(Date.now());
             }
         });
+        user.myReviews.forEach((review) => {
+            if (review.productId.toString() === id.toString()) {
+                review.comment = comment;
+                review.numRating = Number(numRating);
+                review.postedAt = new Date(Date.now());
+            }
+        });
     }
     else {
         const review = {
@@ -238,12 +249,20 @@ export const createOrUpdateReview = async (req, res, next) => {
             comment,
             postedAt: new Date(Date.now()),
         };
+        const myReview = {
+            numRating: Number(numRating),
+            comment,
+            postedAt: new Date(Date.now()),
+            productId: new ObjectId(id),
+        };
         product.reviews.push(review);
+        user.myReviews.push(myReview);
     }
     product.numRating =
         product.reviews.reduce((acc, curr) => acc + curr.numRating, 0) /
             product.reviews.length;
     await product.save({ validateBeforeSave: false });
+    await user.save({ validateBeforeSave: false });
     return res
         .status(200)
         .json(new ApiResponse(200, {}, "Review submitted successfully!"));

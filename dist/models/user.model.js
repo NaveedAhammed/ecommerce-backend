@@ -124,6 +124,29 @@ const userSchema = new Schema({
     resetPasswordToken: {
         type: String,
     },
+    myReviews: [
+        {
+            numRating: {
+                type: Number,
+                required: [true, "User rating is required"],
+                min: [1, "Min rating is 1"],
+                max: [5, "Max rating is 5"],
+            },
+            comment: {
+                type: String,
+                required: [true, "Comment is required"],
+            },
+            postedAt: {
+                type: Date,
+                default: Date.now(),
+            },
+            productId: {
+                type: Types.ObjectId,
+                required: [true, "Product id is required"],
+                ref: "Product",
+            },
+        },
+    ],
 }, { timestamps: true });
 userSchema.pre("save", async function (next) {
     if (!this.isModified("password"))

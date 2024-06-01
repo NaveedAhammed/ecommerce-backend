@@ -104,7 +104,7 @@ export const allParentCategories = asyncHandler(async (req, res, next) => {
 });
 // GET All Billboards
 export const allBillboards = asyncHandler(async (req, res, next) => {
-    const billboards = await Billboard.find().populate("category");
+    const billboards = await Billboard.find().populate("category parentCategory");
     const totalBillboards = await Billboard.countDocuments();
     return res.status(200).json(new ApiResponse(200, {
         billboards,
@@ -273,9 +273,9 @@ export const createParentCategory = asyncHandler(async (req, res, next) => {
 });
 // POST Create Billboard
 export const createBillboard = asyncHandler(async (req, res, next) => {
-    const { title, categoryId } = req.body;
+    const { title, categoryId, brand, parentCategoryId } = req.body;
     const image = req.file;
-    if (!title || !categoryId) {
+    if (!title || !categoryId || !brand || !parentCategoryId) {
         return next(new ApiError(402, "Please enter valid inputs"));
     }
     if (!image) {
@@ -286,9 +286,11 @@ export const createBillboard = asyncHandler(async (req, res, next) => {
         title,
         category: categoryId,
         imageUrl: result?.secure_url,
+        brand,
+        parentCategory: parentCategoryId,
     });
     await billboard.save();
-    const newBillboard = await Billboard.findById(billboard._id).populate("category");
+    const newBillboard = await Billboard.findById(billboard._id).populate("category parentCategory");
     return res
         .status(201)
         .json(new ApiResponse(200, { billboard: newBillboard }, "Created new billboard successfully"));
@@ -547,19 +549,30 @@ export const deleteUnit = asyncHandler(async (req, res, next) => {
 export const updateOrderStatus = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
     const { orderStatus } = req.body;
-    const order = await Order.findById(id);
+    const order = await Order.findById(id)
+        .populate({
+        path: "userId",
+    })
+        .populate({
+        path: "orderItems",
+        populate: {
+            path: "productId",
+        },
+    });
     if (!order) {
         return next(new ApiError(404, "Order not found!"));
     }
     if (orderStatus === "not placed") {
+        order.orderStatus = orderStatus;
         order.paymentInfo = "failed";
-        order.orderStatus = "not placed";
-        await order.save({ validateBeforeSave: false });
-        return res
-            .status(200)
-            .json(new ApiResponse(200, {}, "Order status updated!"));
     }
-    return res.send();
+    else {
+        order.orderStatus = orderStatus;
+    }
+    await order.save({ validateBeforeSave: false });
+    return res
+        .status(200)
+        .json(new ApiResponse(200, { order }, "Order status updated!"));
 });
 // DELETE Product Image
 export const deleteProductImage = asyncHandler(async (req, res, next) => {

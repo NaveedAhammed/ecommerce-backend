@@ -30,6 +30,7 @@ import {
 	updateBillboard,
 	updateChildCategory,
 	updateColor,
+	updateOrderStatus,
 	updateParentCategory,
 	updateProduct,
 	updateUnit,
@@ -115,9 +116,14 @@ router.route("/color/update/:id").put(isAuth, isAdmin, updateColor);
 router
 	.route("/billboard/update/:id")
 	.put(isAuth, isAdmin, upload.single("image"), updateBillboard);
+// PUT product images
 router
 	.route("/product/update/:id")
 	.put(isAuth, isAdmin, upload.array("images"), updateProduct);
+// PUT order status
+router
+	.route("/order/status/update/:id")
+	.put(isAuth, isAdmin, updateOrderStatus);
 
 // <---------- DELETE REQUEST ---------->
 // DELETE user

@@ -5,10 +5,15 @@ const categorySchema = new Schema({
         type: String,
         required: [true, "Billboard title is required"],
     },
-    category: {
+    parentCategory: {
         type: Types.ObjectId,
         required: true,
         ref: "ParentCategory",
+    },
+    category: {
+        type: Types.ObjectId,
+        required: true,
+        ref: "ChildCategory",
     },
     imageUrl: {
         type: String,
@@ -17,6 +22,9 @@ const categorySchema = new Schema({
     isActive: {
         type: Boolean,
         default: false,
+    },
+    brand: {
+        type: String,
     },
 }, { timestamps: true });
 const Billboard = model("Billboard", categorySchema);

@@ -9,6 +9,7 @@ import {
 	loginUser,
 	logoutUser,
 	myProfile,
+	myReviews,
 	refresh,
 	registerUser,
 	resetPassword,
@@ -27,6 +28,8 @@ const router: Router = Router();
 router.route("/myProfile").get(isAuth, myProfile);
 // GET refresh
 router.route("/refresh").get(refresh);
+// GET my reviews
+router.route("/myReviews").get(isAuth, myReviews);
 
 // <---------- POST REQUEST ---------->
 // POST register user

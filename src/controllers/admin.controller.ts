@@ -140,7 +140,9 @@ export const allParentCategories = asyncHandler(
 // GET All Billboards
 export const allBillboards = asyncHandler(
 	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-		const billboards = await Billboard.find().populate("category");
+		const billboards = await Billboard.find().populate(
+			"category parentCategory"
+		);
 		const totalBillboards = await Billboard.countDocuments();
 		return res.status(200).json(
 			new ApiResponse(200, {
@@ -389,9 +391,9 @@ export const createParentCategory = asyncHandler(
 // POST Create Billboard
 export const createBillboard = asyncHandler(
 	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-		const { title, categoryId } = req.body;
+		const { title, categoryId, brand, parentCategoryId } = req.body;
 		const image = req.file;
-		if (!title || !categoryId) {
+		if (!title || !categoryId || !brand || !parentCategoryId) {
 			return next(new ApiError(402, "Please enter valid inputs"));
 		}
 		if (!image) {
@@ -404,10 +406,12 @@ export const createBillboard = asyncHandler(
 			title,
 			category: categoryId,
 			imageUrl: result?.secure_url,
+			brand,
+			parentCategory: parentCategoryId,
 		});
 		await billboard.save();
 		const newBillboard = await Billboard.findById(billboard._id).populate(
-			"category"
+			"category parentCategory"
 		);
 		return res
 			.status(201)
@@ -808,19 +812,29 @@ export const updateOrderStatus = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
 		const { id } = req.params;
 		const { orderStatus } = req.body;
-		const order = await Order.findById(id);
+		const order = await Order.findById(id)
+			.populate({
+				path: "userId",
+			})
+			.populate({
+				path: "orderItems",
+				populate: {
+					path: "productId",
+				},
+			});
 		if (!order) {
 			return next(new ApiError(404, "Order not found!"));
 		}
 		if (orderStatus === "not placed") {
+			order.orderStatus = orderStatus;
 			order.paymentInfo = "failed";
-			order.orderStatus = "not placed";
-			await order.save({ validateBeforeSave: false });
-			return res
-				.status(200)
-				.json(new ApiResponse(200, {}, "Order status updated!"));
+		} else {
+			order.orderStatus = orderStatus;
 		}
-		return res.send();
+		await order.save({ validateBeforeSave: false });
+		return res
+			.status(200)
+			.json(new ApiResponse(200, { order }, "Order status updated!"));
 	}
 );
 

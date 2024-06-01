@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { activeBillboard, allChildCategoriesOfParentCategory, allParentCategories, cartProducts, createOrUpdateReview, deleteReview, featuredProducts, filteredproducts, getAllproducts, newArrivalProducts, productDetails, productReviews, searchSuggetions, similarProducts, wishlistProducts, } from "../controllers/product.controller.js";
+import { activeBillboards, allChildCategoriesOfParentCategory, allParentCategories, cartProducts, createOrUpdateReview, deleteReview, featuredProducts, filteredproducts, getAllproducts, newArrivalProducts, productDetails, productReviews, searchResults, similarProducts, wishlistProducts, } from "../controllers/product.controller.js";
 import { isAuth } from "../middlewares/auth.middleware.js";
 const router = Router();
 // <---------- GET REQUEST ---------->
@@ -22,7 +22,7 @@ router.route("/products/:id").get(productDetails);
 // GET product reviews
 router.route("/product/reviews/:id").get(productReviews);
 // GET active billboard
-router.route("/billboard/active").get(activeBillboard);
+router.route("/billboards/active").get(activeBillboards);
 // GET all parent categories
 router.route("/category/parent/public").get(allParentCategories);
 // GET all child categories of a parent category
@@ -30,7 +30,7 @@ router
     .route("/category/child/public/:id")
     .get(allChildCategoriesOfParentCategory);
 // GET search suggetions
-router.route("/search").get(searchSuggetions);
+router.route("/search").get(searchResults);
 // <---------- POST REQUEST ---------->
 // POST create/update product review
 router.route("/product/review/:id").post(isAuth, createOrUpdateReview);

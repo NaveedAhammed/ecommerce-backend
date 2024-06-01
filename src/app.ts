@@ -42,11 +42,13 @@ import userRoutes from "./routes/user.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import productRoutes from "./routes/product.routes.js";
 import checkoutRoutes from "./routes/checkout.routes.js";
+import orderRoutes from "./routes/order.routes.js";
 // routes declaration
 app.use("/api/v1", userRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1", productRoutes);
 app.use("/api/v1", checkoutRoutes);
+app.use("/api/v1", orderRoutes);
 
 import { error } from "./middlewares/error.middleware.js";
 // error middleware

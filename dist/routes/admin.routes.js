@@ -1,6 +1,6 @@
 import multer from "multer";
 import { Router } from "express";
-import { adminLogin, allBillboards, allChildCategories, allColors, allOrders, allParentCategories, allProducts, allSizes, allUsers, createBillboard, createChildCategory, createColor, createParentCategory, createProduct, createUnit, deleteChildCategory, deleteColor, deleteOrder, deleteParentCategory, deleteProduct, deleteProductImage, deleteUnit, deleteUser, refresh, singleUser, updateBillboard, updateChildCategory, updateColor, updateParentCategory, updateProduct, updateUnit, updateUserRole, } from "../controllers/admin.controller.js";
+import { adminLogin, allBillboards, allChildCategories, allColors, allOrders, allParentCategories, allProducts, allSizes, allUsers, createBillboard, createChildCategory, createColor, createParentCategory, createProduct, createUnit, deleteChildCategory, deleteColor, deleteOrder, deleteParentCategory, deleteProduct, deleteProductImage, deleteUnit, deleteUser, refresh, singleUser, updateBillboard, updateChildCategory, updateColor, updateOrderStatus, updateParentCategory, updateProduct, updateUnit, updateUserRole, } from "../controllers/admin.controller.js";
 import { isAdmin, isAuth } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 const storage = multer.diskStorage({
@@ -73,9 +73,14 @@ router.route("/color/update/:id").put(isAuth, isAdmin, updateColor);
 router
     .route("/billboard/update/:id")
     .put(isAuth, isAdmin, upload.single("image"), updateBillboard);
+// PUT product images
 router
     .route("/product/update/:id")
     .put(isAuth, isAdmin, upload.array("images"), updateProduct);
+// PUT order status
+router
+    .route("/order/status/update/:id")
+    .put(isAuth, isAdmin, updateOrderStatus);
 // <---------- DELETE REQUEST ---------->
 // DELETE user
 router.route("/users/:id").delete(isAuth, isAdmin, deleteUser);

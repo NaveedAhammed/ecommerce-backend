@@ -54,13 +54,11 @@ export const registerUser = asyncHandler(async (req, res, next) => {
 });
 // POST Login User
 export const loginUser = asyncHandler(async (req, res, next) => {
-    const { usernameOrEmail, password } = req.body;
-    if (!usernameOrEmail || !password) {
+    const { email, password } = req.body;
+    if (!email || !password) {
         return next(new ApiError(402, "Please enter valid inputs"));
     }
-    const user = await User.findOne({
-        $or: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
-    });
+    const user = await User.findOne({ email });
     if (!user) {
         return next(new ApiError(404, "User does not exist"));
     }
@@ -252,6 +250,22 @@ export const myProfile = asyncHandler(async (req, res, next) => {
             avatar: user?.avatar,
             phone: user?.phone,
         },
+    }));
+});
+// GET My Reviews
+export const myReviews = asyncHandler(async (req, res, next) => {
+    const id = req.user._id;
+    const user = await User.findById(id).populate({
+        path: "myReviews",
+        populate: {
+            path: "productId",
+        },
+    });
+    if (!user) {
+        return next(new ApiError(404, "User not found!"));
+    }
+    return res.status(200).json(new ApiResponse(200, {
+        myReviews: user.myReviews,
     }));
 });
 // POST Update My Profile

@@ -6,10 +6,11 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { IGetUserAuthInfoRequest } from "../types/request.js";
 import Billboard from "../models/billboards.model.js";
-import User from "../models/user.model.js";
+import User, { IMyReview } from "../models/user.model.js";
 import ParentCategory from "../models/parentCategory.model.js";
 import ChildCategory from "../models/childCategory.model.js";
 import Features from "../utils/Features.js";
+import { ObjectId } from "mongodb";
 
 // GET All Products
 export const getAllproducts = asyncHandler(
@@ -38,36 +39,35 @@ export const getAllproducts = asyncHandler(
 	}
 );
 
-// GET Search Suggetions
-export const searchSuggetions = asyncHandler(
+// GET Search Results
+export const searchResults = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
-		const { query } = req.query;
+		const { searchQuery } = req.query;
 		const products = await Product.find({
 			$or: [
 				{
 					title: {
-						$regex: query,
+						$regex: searchQuery,
 						$options: "i",
 					},
 				},
 				{
 					brand: {
-						$regex: query,
+						$regex: searchQuery,
+						$options: "i",
+					},
+				},
+				{
+					description: {
+						$regex: searchQuery,
 						$options: "i",
 					},
 				},
 			],
 		});
-		const childCategories = await ChildCategory.find({
-			name: {
-				$regex: query,
-				$options: "i",
-			},
-		});
 		return res.status(200).json(
 			new ApiResponse(200, {
 				products,
-				childCategories,
 			})
 		);
 	}
@@ -81,6 +81,7 @@ export const filteredproducts = asyncHandler(
 			search,
 			parentCategoryId,
 			childCategoryId,
+			customerRating,
 			brands,
 			discount,
 			featured,
@@ -99,7 +100,8 @@ export const filteredproducts = asyncHandler(
 			JSON.parse(featured as string) ? Boolean(featured) : false,
 			JSON.parse(newArrivals as string) ? Boolean(newArrivals) : false,
 			JSON.parse(minPrice as string) ? Number(minPrice) : null,
-			JSON.parse(maxPrice as string) ? Number(maxPrice) : null
+			JSON.parse(maxPrice as string) ? Number(maxPrice) : null,
+			customerRating ? Number(customerRating as string) : 0
 		);
 		const data = await features.filter(skip, limit, page);
 		return res.status(200).json(
@@ -245,13 +247,15 @@ export const cartProducts = asyncHandler(
 	}
 );
 
-// GET Active Billboard
-export const activeBillboard = asyncHandler(
+// GET Active Billboards
+export const activeBillboards = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
-		const billboard = await Billboard.find({ isActive: true });
+		const billboards = await Billboard.find({ isActive: true }).populate(
+			"category parentCategory"
+		);
 		return res.status(200).json(
 			new ApiResponse(200, {
-				billboard,
+				billboards,
 			})
 		);
 	}
@@ -298,8 +302,12 @@ export const createOrUpdateReview = async (
 	const { numRating, comment } = req.body;
 	const { id } = req.params;
 	const product = await Product.findById(id);
+	const user = await User.findById(req.user._id);
 	if (!product) {
 		return next(new ApiError(404, "Product not found!"));
+	}
+	if (!user) {
+		return next(new ApiError(404, "User not found!"));
 	}
 	const isReviewed: IReview | undefined = product.reviews.find(
 		(rev) => rev.userId.toString() === req.user._id.toString()
@@ -312,6 +320,13 @@ export const createOrUpdateReview = async (
 				rev.postedAt = new Date(Date.now());
 			}
 		});
+		user.myReviews.forEach((review) => {
+			if (review.productId.toString() === id.toString()) {
+				review.comment = comment;
+				review.numRating = Number(numRating);
+				review.postedAt = new Date(Date.now());
+			}
+		});
 	} else {
 		const review: IReview = {
 			userId: req.user._id,
@@ -319,12 +334,20 @@ export const createOrUpdateReview = async (
 			comment,
 			postedAt: new Date(Date.now()),
 		};
+		const myReview: IMyReview = {
+			numRating: Number(numRating),
+			comment,
+			postedAt: new Date(Date.now()),
+			productId: new ObjectId(id),
+		};
 		product.reviews.push(review);
+		user.myReviews.push(myReview);
 	}
 	product.numRating =
 		product.reviews.reduce((acc, curr) => acc + curr.numRating, 0) /
 		product.reviews.length;
 	await product.save({ validateBeforeSave: false });
+	await user.save({ validateBeforeSave: false });
 	return res
 		.status(200)
 		.json(new ApiResponse(200, {}, "Review submitted successfully!"));

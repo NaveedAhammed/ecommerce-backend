@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 import ChildCategory from "../models/childCategory.model.js";
 import Product from "../models/product.model.js";
 class Features {
-    constructor(search, parentCategoryId, childCategoryId, brands, discount, featured, newArrivals, minPrice, maxPrice) {
+    constructor(search, parentCategoryId, childCategoryId, brands, discount, featured, newArrivals, minPrice, maxPrice, customerRating) {
         this.searchQuery = search;
         this.parentCategoryId = parentCategoryId;
         this.childCategoryId = childCategoryId;
@@ -12,6 +12,7 @@ class Features {
         this.newArrivals = newArrivals;
         this.minPrice = minPrice;
         this.maxPrice = maxPrice;
+        this.customerRating = customerRating;
     }
     async filter(skip, limit, page) {
         let childCategoriesIds = [];
@@ -38,14 +39,18 @@ class Features {
         if (this.featured) {
             query["featured"] = this.featured;
         }
+        console.log(this.minPrice, this.maxPrice);
         if (this.maxPrice && this.minPrice) {
             query["price"] = { $gte: this.minPrice, $lte: this.maxPrice };
         }
         else if (this.minPrice && !this.maxPrice) {
             query["price"] = { $gte: this.minPrice };
         }
-        else {
+        else if (!this.minPrice && this.maxPrice) {
             query["price"] = { $lte: this.maxPrice };
+        }
+        if (this.customerRating > 0) {
+            query["numRating"] = { $gte: this.customerRating };
         }
         if (childCategoriesIds.length === 0) {
             products = await Product.find({ ...query })

@@ -5,6 +5,8 @@ import { IGetUserAuthInfoRequest } from "../types/request.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
+import { populate } from "dotenv";
+import User from "../models/user.model.js";
 
 // POST Create Order
 export const createOrder = asyncHandler(
@@ -74,10 +76,50 @@ export const orderDetails = asyncHandler(
 // GET My Orders
 export const myOrders = asyncHandler(
 	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-		const orders = await Order.find({ user: req.user._id });
+		const page = Number(req.query.page) || 1;
+		const limit = 10;
+		const skip = (page - 1) * limit;
+		const orders = await Order.find({ userId: req.user._id })
+			.populate({
+				path: "userId",
+			})
+			.populate({
+				path: "orderItems",
+				populate: {
+					path: "productId",
+					populate: {
+						path: "category unit",
+					},
+				},
+			})
+			.skip(skip)
+			.limit(limit);
+		const totalOrders = await Order.countDocuments();
 		return res.status(200).json(
 			new ApiResponse(200, {
 				orders,
+				totalOrders,
+			})
+		);
+	}
+);
+
+// GET Has Purchased Or Not
+export const hasPurchasedOrNot = asyncHandler(
+	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+		const { id } = req.params;
+		const orders = await Order.find({
+			userId: req.user._id,
+			orderStatus: "delivered",
+		});
+		const hasPurchasedOrNot = orders.some((order) =>
+			order.orderItems.some(
+				(item) => item.productId.toString() === id.toString()
+			)
+		);
+		return res.status(200).json(
+			new ApiResponse(200, {
+				hasPurchasedOrNot,
 			})
 		);
 	}

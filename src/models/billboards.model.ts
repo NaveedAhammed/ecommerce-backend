@@ -1,11 +1,14 @@
 import { Schema, Types, model } from "mongoose";
 import { IParentCategory } from "./parentCategory.model.js";
+import { IChildCategory } from "./childCategory.model.js";
 
 export interface IBillboard {
 	title: string;
-	category: Types.ObjectId | IParentCategory;
+	parentCategory: Types.ObjectId | IParentCategory;
+	category: Types.ObjectId | IChildCategory;
 	imageUrl: string;
 	isActive: boolean;
+	brand: string;
 }
 
 const categorySchema = new Schema<IBillboard>(
@@ -15,10 +18,15 @@ const categorySchema = new Schema<IBillboard>(
 			type: String,
 			required: [true, "Billboard title is required"],
 		},
-		category: {
+		parentCategory: {
 			type: Types.ObjectId,
 			required: true,
 			ref: "ParentCategory",
+		},
+		category: {
+			type: Types.ObjectId,
+			required: true,
+			ref: "ChildCategory",
 		},
 		imageUrl: {
 			type: String,
@@ -27,6 +35,9 @@ const categorySchema = new Schema<IBillboard>(
 		isActive: {
 			type: Boolean,
 			default: false,
+		},
+		brand: {
+			type: String,
 		},
 	},
 	{ timestamps: true }

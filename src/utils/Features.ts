@@ -12,6 +12,7 @@ class Features {
 	newArrivals: boolean;
 	minPrice: number | null;
 	maxPrice: number | null;
+	customerRating: number;
 
 	constructor(
 		search: string,
@@ -21,8 +22,9 @@ class Features {
 		discount: number,
 		featured: boolean,
 		newArrivals: boolean,
-		minPrice,
-		maxPrice
+		minPrice: number | null,
+		maxPrice: number | null,
+		customerRating: number
 	) {
 		this.searchQuery = search;
 		this.parentCategoryId = parentCategoryId;
@@ -33,6 +35,7 @@ class Features {
 		this.newArrivals = newArrivals;
 		this.minPrice = minPrice;
 		this.maxPrice = maxPrice;
+		this.customerRating = customerRating;
 	}
 
 	public async filter(skip: number, limit: number, page: number) {
@@ -60,12 +63,16 @@ class Features {
 		if (this.featured) {
 			query["featured"] = this.featured;
 		}
+		console.log(this.minPrice, this.maxPrice);
 		if (this.maxPrice && this.minPrice) {
 			query["price"] = { $gte: this.minPrice, $lte: this.maxPrice };
 		} else if (this.minPrice && !this.maxPrice) {
 			query["price"] = { $gte: this.minPrice };
-		} else {
+		} else if (!this.minPrice && this.maxPrice) {
 			query["price"] = { $lte: this.maxPrice };
+		}
+		if (this.customerRating > 0) {
+			query["numRating"] = { $gte: this.customerRating };
 		}
 		if (childCategoriesIds.length === 0) {
 			products = await Product.find({ ...query })

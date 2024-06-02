@@ -56,6 +56,6 @@ router.route("/product/review/:id").post(isAuth, createOrUpdateReview as any);
 
 // <---------- DELETE REQUEST ---------->
 // DELETE product review
-router.route("/product/review/:id").delete(deleteReview as any);
+router.route("/product/review/:id").delete(isAuth, deleteReview as any);
 
 export default router;

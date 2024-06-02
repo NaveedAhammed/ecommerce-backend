@@ -283,7 +283,7 @@ export const productReviews = async (req, res, next) => {
 };
 // POST Delete Review
 export const deleteReview = async (req, res, next) => {
-    const { id } = req.query;
+    const { id } = req.params;
     const product = await Product.findById(id);
     if (!product) {
         return next(new ApiError(404, "Product not found!"));
@@ -293,7 +293,12 @@ export const deleteReview = async (req, res, next) => {
     product.numRating =
         newReviews.reduce((acc, curr) => acc + curr.numRating, 0) /
             newReviews.length;
-    await product.save();
+    const user = await User.findById(req.user._id);
+    if (user?.myReviews) {
+        user.myReviews = user.myReviews.filter((rev) => rev.productId.toString() !== id.toString());
+    }
+    await product.save({ validateBeforeSave: false });
+    await user?.save({ validateBeforeSave: false });
     return res
         .status(200)
         .json(new ApiResponse(200, {}, "Review deleted successfully!"));

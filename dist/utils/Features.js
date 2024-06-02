@@ -27,22 +27,21 @@ class Features {
         }
         let query = {};
         let sortQuery = {};
-        if (this.sortBy === "1") {
+        if (this.sortBy === "Price: Low to High") {
             sortQuery["price"] = 1;
         }
-        else if (this.sortBy === "2") {
+        else if (this.sortBy === "Price: High to Low") {
             sortQuery["price"] = -1;
         }
-        else if (this.sortBy === "3") {
+        else if (this.sortBy === "Rating: Low to High") {
             sortQuery["numRating"] = 1;
         }
-        else if (this.sortBy === "4") {
+        else if (this.sortBy === "Rating: High to Low") {
             sortQuery["numRating"] = -1;
         }
-        else if (this.sortBy === "5") {
+        else if (this.sortBy === "New Arrivals") {
             sortQuery["createdAt"] = -1;
         }
-        console.log(this.sortBy, sortQuery);
         if (this.searchQuery) {
             query["title"] = {
                 $regex: this.searchQuery,
@@ -58,7 +57,6 @@ class Features {
         if (this.featured) {
             query["featured"] = this.featured;
         }
-        console.log(this.minPrice, this.maxPrice);
         if (this.maxPrice && this.minPrice) {
             query["price"] = { $gte: this.minPrice, $lte: this.maxPrice };
         }

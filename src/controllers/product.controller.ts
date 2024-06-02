@@ -88,7 +88,9 @@ export const filteredproducts = asyncHandler(
 			newArrivals,
 			minPrice,
 			maxPrice,
+			sortBy,
 		} = req.query;
+
 		const limit = 20;
 		const skip = (page - 1) * limit;
 		const features = new Features(
@@ -101,13 +103,16 @@ export const filteredproducts = asyncHandler(
 			JSON.parse(newArrivals as string) ? Boolean(newArrivals) : false,
 			JSON.parse(minPrice as string) ? Number(minPrice) : null,
 			JSON.parse(maxPrice as string) ? Number(maxPrice) : null,
-			customerRating ? Number(customerRating as string) : 0
+			customerRating ? Number(customerRating as string) : 0,
+			sortBy as string
 		);
 		const data = await features.filter(skip, limit, page);
 		return res.status(200).json(
 			new ApiResponse(200, {
 				filteredProducts: data.products,
 				brands: data.brands,
+				totalProducts: data.totalProducts,
+				productsPerPage: limit,
 			})
 		);
 	}

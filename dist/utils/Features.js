@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 import ChildCategory from "../models/childCategory.model.js";
 import Product from "../models/product.model.js";
 class Features {
-    constructor(search, parentCategoryId, childCategoryId, brands, discount, featured, newArrivals, minPrice, maxPrice, customerRating) {
+    constructor(search, parentCategoryId, childCategoryId, brands, discount, featured, newArrivals, minPrice, maxPrice, customerRating, sortBy) {
         this.searchQuery = search;
         this.parentCategoryId = parentCategoryId;
         this.childCategoryId = childCategoryId;
@@ -13,10 +13,12 @@ class Features {
         this.minPrice = minPrice;
         this.maxPrice = maxPrice;
         this.customerRating = customerRating;
+        this.sortBy = sortBy;
     }
     async filter(skip, limit, page) {
         let childCategoriesIds = [];
         let products = [];
+        let totalProducts = 0;
         if (this.parentCategoryId) {
             const childCategories = await ChildCategory.find({
                 parentCategory: new ObjectId(this.parentCategoryId),
@@ -24,6 +26,23 @@ class Features {
             childCategoriesIds = childCategories.map((it) => it._id);
         }
         let query = {};
+        let sortQuery = {};
+        if (this.sortBy === "1") {
+            sortQuery["price"] = 1;
+        }
+        else if (this.sortBy === "2") {
+            sortQuery["price"] = -1;
+        }
+        else if (this.sortBy === "3") {
+            sortQuery["numRating"] = 1;
+        }
+        else if (this.sortBy === "4") {
+            sortQuery["numRating"] = -1;
+        }
+        else if (this.sortBy === "5") {
+            sortQuery["createdAt"] = -1;
+        }
+        console.log(this.sortBy, sortQuery);
         if (this.searchQuery) {
             query["title"] = {
                 $regex: this.searchQuery,
@@ -53,8 +72,9 @@ class Features {
             query["numRating"] = { $gte: this.customerRating };
         }
         if (childCategoriesIds.length === 0) {
+            totalProducts = await Product.find({ ...query }).countDocuments();
             products = await Product.find({ ...query })
-                .sort(this.newArrivals ? { createdAt: -1 } : {})
+                .sort(sortQuery)
                 .populate({
                 path: "category",
                 populate: {
@@ -67,11 +87,15 @@ class Features {
                 .skip(skip);
         }
         else {
+            totalProducts = await Product.find({
+                category: { $in: childCategoriesIds },
+                ...query,
+            }).countDocuments();
             products = await Product.find({
                 category: { $in: childCategoriesIds },
                 ...query,
             })
-                .sort(this.newArrivals ? { createdAt: -1 } : {})
+                .sort(sortQuery)
                 .populate({
                 path: "category",
                 populate: {
@@ -88,12 +112,16 @@ class Features {
             return brands.indexOf(it) === index;
         });
         if (this.brands === null) {
-            return { products, brands: uniqueBrands };
+            return { products, brands: uniqueBrands, totalProducts };
         }
         else {
+            totalProducts = await Product.find({
+                brand: { $in: brands },
+            }).countDocuments();
             return {
                 products: products.filter((it) => this.brands.includes(it.brand)),
                 brands: uniqueBrands,
+                totalProducts,
             };
         }
     }

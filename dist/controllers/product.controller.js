@@ -62,14 +62,16 @@ export const searchResults = asyncHandler(async (req, res, next) => {
 // GET Filtered Products
 export const filteredproducts = asyncHandler(async (req, res, next) => {
     const page = Number(req.query.page) || 1;
-    const { search, parentCategoryId, childCategoryId, customerRating, brands, discount, featured, newArrivals, minPrice, maxPrice, } = req.query;
+    const { search, parentCategoryId, childCategoryId, customerRating, brands, discount, featured, newArrivals, minPrice, maxPrice, sortBy, } = req.query;
     const limit = 20;
     const skip = (page - 1) * limit;
-    const features = new Features(search ? search : "", parentCategoryId ? parentCategoryId : "", childCategoryId ? childCategoryId : "", brands ? JSON.parse(brands) : [], discount ? Number(discount) : 0, JSON.parse(featured) ? Boolean(featured) : false, JSON.parse(newArrivals) ? Boolean(newArrivals) : false, JSON.parse(minPrice) ? Number(minPrice) : null, JSON.parse(maxPrice) ? Number(maxPrice) : null, customerRating ? Number(customerRating) : 0);
+    const features = new Features(search ? search : "", parentCategoryId ? parentCategoryId : "", childCategoryId ? childCategoryId : "", brands ? JSON.parse(brands) : [], discount ? Number(discount) : 0, JSON.parse(featured) ? Boolean(featured) : false, JSON.parse(newArrivals) ? Boolean(newArrivals) : false, JSON.parse(minPrice) ? Number(minPrice) : null, JSON.parse(maxPrice) ? Number(maxPrice) : null, customerRating ? Number(customerRating) : 0, sortBy);
     const data = await features.filter(skip, limit, page);
     return res.status(200).json(new ApiResponse(200, {
         filteredProducts: data.products,
         brands: data.brands,
+        totalProducts: data.totalProducts,
+        productsPerPage: limit,
     }));
 });
 // GET Featured Products

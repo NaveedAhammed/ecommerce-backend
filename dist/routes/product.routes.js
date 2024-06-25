@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { activeBillboards, allChildCategoriesOfParentCategory, allParentCategories, cartProducts, createOrUpdateReview, deleteReview, featuredProducts, filteredproducts, getAllproducts, newArrivalProducts, productDetails, productReviews, searchResults, similarProducts, wishlistProducts, } from "../controllers/product.controller.js";
+import { activeBillboards, allChildCategoriesOfParentCategory, allParentCategories, createOrUpdateReview, deleteReview, featuredProducts, filteredproducts, getAllproducts, newArrivalProducts, productDetails, productReviews, searchResults, similarProducts, wishlistProducts, } from "../controllers/product.controller.js";
 import { isAuth } from "../middlewares/auth.middleware.js";
 const router = Router();
 // <---------- GET REQUEST ---------->
@@ -15,8 +15,6 @@ router.route("/products/newArrivals").get(newArrivalProducts);
 router.route("/products/similar/:categoryId").get(similarProducts);
 // GET wishlist products
 router.route("/products/wishlist").get(isAuth, wishlistProducts);
-// GET cart products
-router.route("/products/cart").get(isAuth, cartProducts);
 // GET product details
 router.route("/products/:id").get(productDetails);
 // GET product reviews

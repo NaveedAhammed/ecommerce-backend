@@ -646,3 +646,28 @@ export const deleteCartItem = asyncHandler(
 		);
 	}
 );
+
+// GET Shopping Bag Products
+export const shoppingBagProducts = asyncHandler(
+	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+		const user = await User.findById(req.user._id);
+		if (!user) {
+			return next(new ApiError(404, "User not found!"));
+		}
+		await user.populate({
+			path: "cart",
+			populate: {
+				path: "productId",
+				populate: {
+					path: "category unit color",
+				},
+			},
+		});
+		return res.status(200).json(
+			new ApiResponse(200, {
+				cart: user.cart,
+				totalCartProducts: user.cart.length,
+			})
+		);
+	}
+);

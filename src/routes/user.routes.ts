@@ -13,6 +13,7 @@ import {
 	refresh,
 	registerUser,
 	resetPassword,
+	shoppingBagProducts,
 	toggleCartItemQuantity,
 	updateMyProfile,
 	updateProfilePicture,
@@ -30,6 +31,8 @@ router.route("/myProfile").get(isAuth, myProfile);
 router.route("/refresh").get(refresh);
 // GET my reviews
 router.route("/myReviews").get(isAuth, myReviews);
+// GET shopping bag products
+router.route("/shopping-bag").get(isAuth, shoppingBagProducts);
 
 // <---------- POST REQUEST ---------->
 // POST register user

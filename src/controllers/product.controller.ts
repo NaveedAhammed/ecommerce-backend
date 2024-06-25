@@ -227,31 +227,6 @@ export const wishlistProducts = asyncHandler(
 	}
 );
 
-// GET Cart Products
-export const cartProducts = asyncHandler(
-	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-		const user = await User.findById(req.user._id);
-		if (!user) {
-			return next(new ApiError(404, "User not found!"));
-		}
-		await user.populate({
-			path: "cart",
-			populate: {
-				path: "productId",
-				populate: {
-					path: "category unit color",
-				},
-			},
-		});
-		return res.status(200).json(
-			new ApiResponse(200, {
-				cart: user.cart,
-				totalCartProducts: user.cart.length,
-			})
-		);
-	}
-);
-
 // GET Active Billboards
 export const activeBillboards = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {

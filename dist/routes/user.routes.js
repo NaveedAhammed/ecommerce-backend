@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { addShippingAddress, addToCart, addorRemoveWishlistId, deleteCartItem, deleteShippingAddress, forgotPassword, loginUser, logoutUser, myProfile, myReviews, refresh, registerUser, resetPassword, toggleCartItemQuantity, updateMyProfile, updateProfilePicture, updateShippingAddress, } from "../controllers/user.controller.js";
+import { addShippingAddress, addToCart, addorRemoveWishlistId, deleteCartItem, deleteShippingAddress, forgotPassword, loginUser, logoutUser, myProfile, myReviews, refresh, registerUser, resetPassword, shoppingBagProducts, toggleCartItemQuantity, updateMyProfile, updateProfilePicture, updateShippingAddress, } from "../controllers/user.controller.js";
 import { isAuth } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 const router = Router();
@@ -10,6 +10,8 @@ router.route("/myProfile").get(isAuth, myProfile);
 router.route("/refresh").get(refresh);
 // GET my reviews
 router.route("/myReviews").get(isAuth, myReviews);
+// GET shopping bag products
+router.route("/shopping-bag").get(isAuth, shoppingBagProducts);
 // <---------- POST REQUEST ---------->
 // POST register user
 router.route("/register").post(registerUser);

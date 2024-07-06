@@ -7,6 +7,7 @@ import { ApiError } from "../utils/ApiError.js";
 import Stripe from "stripe";
 import { IProduct } from "../models/product.model.js";
 import Order from "../models/order.model.js";
+import { ObjectId } from "mongodb";
 
 const STRIPE = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
@@ -14,7 +15,7 @@ const STRIPE = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 export const checkoutSession = asyncHandler(
 	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
 		const user = await User.findById(req.user._id);
-		const shippingAddress = req.body.selectedAddress;
+		const shippingAddress = req.body.deliveryAddress;
 		const cart: { quantity: number; productId: IProduct }[] = req.body.cart;
 		if (!user) {
 			return next(new ApiError(404, "User not found!"));
@@ -97,6 +98,7 @@ export const checkoutSession = asyncHandler(
 // POST Stripe Webhook
 export const webhook = asyncHandler(
 	async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+		console.log("Hello here");
 		let event: Stripe.Event;
 		const sig = req.headers["stripe-signature"];
 		try {
@@ -112,13 +114,13 @@ export const webhook = asyncHandler(
 
 		if (event.type === "checkout.session.completed") {
 			const order = await Order.findById(
-				event.data.object.metadata?.orderId
+				new ObjectId(event.data.object.metadata?.orderId)
 			);
 			if (!order) {
 				return next(new ApiError(404, "Order not found"));
 			}
 			const user = await User.findById(
-				event.data.object.metadata?.userId
+				new ObjectId(event.data.object.metadata?.userId)
 			);
 			if (!user) {
 				return next(new ApiError(500, "Something went wrong"));
@@ -129,7 +131,6 @@ export const webhook = asyncHandler(
 			user.cart = [];
 			await user.save({ validateBeforeSave: false });
 		}
-		console.log(event.type, event.data.object);
 
 		res.status(200).send();
 	}

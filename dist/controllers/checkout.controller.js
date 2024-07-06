@@ -4,11 +4,12 @@ import User from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import Stripe from "stripe";
 import Order from "../models/order.model.js";
+import { ObjectId } from "mongodb";
 const STRIPE = new Stripe(process.env.STRIPE_SECRET_KEY);
 // GET Checkout Session
 export const checkoutSession = asyncHandler(async (req, res, next) => {
     const user = await User.findById(req.user._id);
-    const shippingAddress = req.body.selectedAddress;
+    const shippingAddress = req.body.deliveryAddress;
     const cart = req.body.cart;
     if (!user) {
         return next(new ApiError(404, "User not found!"));
@@ -85,6 +86,7 @@ export const checkoutSession = asyncHandler(async (req, res, next) => {
 });
 // POST Stripe Webhook
 export const webhook = asyncHandler(async (req, res, next) => {
+    console.log("Hello here");
     let event;
     const sig = req.headers["stripe-signature"];
     try {
@@ -95,11 +97,11 @@ export const webhook = asyncHandler(async (req, res, next) => {
         return res.status(400).send(`Webhook error: ${err.message}`);
     }
     if (event.type === "checkout.session.completed") {
-        const order = await Order.findById(event.data.object.metadata?.orderId);
+        const order = await Order.findById(new ObjectId(event.data.object.metadata?.orderId));
         if (!order) {
             return next(new ApiError(404, "Order not found"));
         }
-        const user = await User.findById(event.data.object.metadata?.userId);
+        const user = await User.findById(new ObjectId(event.data.object.metadata?.userId));
         if (!user) {
             return next(new ApiError(500, "Something went wrong"));
         }
@@ -109,6 +111,5 @@ export const webhook = asyncHandler(async (req, res, next) => {
         user.cart = [];
         await user.save({ validateBeforeSave: false });
     }
-    console.log(event.type, event.data.object);
     res.status(200).send();
 });
